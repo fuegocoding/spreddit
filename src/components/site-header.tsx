@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth, signIn, signOut } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -10,34 +10,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RedditMark } from "@/components/reddit-mark";
+import { IconLogout, IconUser, IconLayoutGrid, IconSettings } from "@tabler/icons-react";
 import { formatUsd } from "@/lib/money";
 
 export async function SiteHeader({ user }: { user: any }) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/60 backdrop-blur-xl">
+      <div className="max-w-6xl mx-auto flex h-16 items-center justify-between px-6 md:px-16">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="grid size-7 place-items-center rounded-lg bg-orange-500 text-white">
-              <RedditMark className="size-5" />
+          <Link href="/" className="flex items-center gap-3 font-sans font-bold text-lg tracking-tight text-foreground">
+            <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground font-black text-sm">
+              S
             </span>
             <span>Spreddit</span>
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              / Depop for Reddit
-            </span>
           </Link>
-          <nav className="hidden md:flex items-center gap-4 text-sm">
-            <Link href="/feed" className="text-muted-foreground hover:text-foreground">
-              Browse feed
+          <nav className="hidden md:flex gap-6 items-center">
+            <Link href="/feed" className="text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
+              Browse
             </Link>
-            <Link href="/#how" className="text-muted-foreground hover:text-foreground">
+            <Link href="/#how" className="text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
               How it works
             </Link>
-            <Link href="/#pricing" className="text-muted-foreground hover:text-foreground">
+            <Link href="/#pricing" className="text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
               Pricing
             </Link>
-            <Link href="/docs" className="text-muted-foreground hover:text-foreground">
+            <Link href="/docs" className="text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
               Docs
             </Link>
           </nav>
@@ -46,40 +43,45 @@ export async function SiteHeader({ user }: { user: any }) {
         <div className="flex items-center gap-2">
           {user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <Avatar className="size-6">
-                      <AvatarImage src={user.image ?? ""} />
-                      <AvatarFallback>
-                        {user.email?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden sm:inline">
-                      {user.role === "poster" ? "Poster" : "Buyer"}
-                    </span>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-2">
+                  <Avatar className="size-7">
+                    <AvatarImage src={user.image ?? ""} />
+                    <AvatarFallback className="text-xs">
+                      {user.email?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden sm:inline">
+                    {user.role === "poster" ? "Poster" : "Buyer"}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
                 <DropdownMenuLabel>
-                  <div className="text-xs font-normal text-muted-foreground">
-                    Signed in as
-                  </div>
-                  <div className="truncate">{user.email}</div>
-                  <div className="text-xs font-normal text-muted-foreground mt-1">
+                  <div className="font-mono text-xs text-muted-foreground">Signed in as</div>
+                  <div className="truncate font-sans text-sm">{user.email}</div>
+                  <div className="font-mono text-xs text-muted-foreground mt-1">
                     Balance: {formatUsd(user.balanceCents ?? 0, { withCents: true })}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem render={<Link href={user.role === "poster" ? "/poster" : "/buyer"} />}>
-                  Dashboard
+                <DropdownMenuItem asChild>
+                  <Link href={user.role === "poster" ? "/poster" : "/buyer"} className="flex items-center gap-2 cursor-pointer">
+                    <IconLayoutGrid className="size-4" />
+                    Dashboard
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/feed" />}>
-                  Browse feed
+                <DropdownMenuItem asChild>
+                  <Link href="/feed" className="flex items-center gap-2 cursor-pointer">
+                    <IconLayoutGrid className="size-4" />
+                    Browse feed
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/settings" />}>
-                  Settings
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <IconSettings className="size-4" />
+                    Settings
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <form
@@ -90,8 +92,9 @@ export async function SiteHeader({ user }: { user: any }) {
                 >
                   <button
                     type="submit"
-                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted rounded-md"
+                    className="w-full text-left flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded-md cursor-pointer"
                   >
+                    <IconLogout className="size-4" />
                     Sign out
                   </button>
                 </form>
@@ -99,18 +102,11 @@ export async function SiteHeader({ user }: { user: any }) {
             </DropdownMenu>
           ) : (
             <>
-              <form
-                action={async () => {
-                  "use server";
-                  await signIn("reddit", { redirectTo: "/poster" });
-                }}
-              >
-                <Button variant="ghost" size="sm">
-                  Earn as poster
-                </Button>
-              </form>
-              <Button size="sm" render={<Link href="/login" />}>
-                Sign in
+              <Button asChild variant="ghost" className="hidden sm:inline-flex">
+                <Link href="/feed">Browse feed</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/login">Sign in</Link>
               </Button>
             </>
           )}

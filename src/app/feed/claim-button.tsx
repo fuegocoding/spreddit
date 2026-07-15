@@ -13,16 +13,11 @@ import {
 import { claimPostAction } from "@/app/poster/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { IconCoin } from "@tabler/icons-react";
 
 type Account = { id: string; username: string; karma: number };
 
-export function ClaimButton({
-  postId,
-  accounts,
-}: {
-  postId: string;
-  accounts: Account[];
-}) {
+export function ClaimButton({ postId, accounts }: { postId: string; accounts: Account[] }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(accounts[0]?.id ?? "");
   const [pending, startTransition] = useTransition();
@@ -50,13 +45,12 @@ export function ClaimButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button size="sm" className="w-full">
-            Claim
-          </Button>
-        }
-      />
+      <DialogTrigger asChild>
+        <Button className="w-full gap-2">
+          <IconCoin className="size-4" />
+          Claim
+        </Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Claim this post</DialogTitle>
@@ -69,7 +63,7 @@ export function ClaimButton({
           {accounts.map((a) => (
             <label
               key={a.id}
-              className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:bg-muted has-[:checked]:border-orange-500 has-[:checked]:bg-orange-500/5"
+              className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-primary/5"
             >
               <input
                 type="radio"
@@ -89,9 +83,7 @@ export function ClaimButton({
           ))}
         </div>
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={handleClaim} disabled={pending || !selected}>
             {pending ? "Claiming…" : "Claim and publish"}
           </Button>

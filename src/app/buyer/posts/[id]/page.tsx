@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getBuyerPostWithClaims } from "@/lib/queries";
 import { formatUsd } from "@/lib/money";
-import { TIER_LABEL, TIER_MULTIPLIER } from "@/lib/pricing";
+import { TIER_LABEL } from "@/lib/pricing";
 import {
   Card,
   CardContent,
@@ -13,14 +13,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, ExternalLink, ShieldCheck, ShieldAlert } from "lucide-react";
+import { IconArrowLeft, IconExternalLink, IconShieldCheck, IconShieldX } from "@tabler/icons-react";
 import Link from "next/link";
 
 const CLAIM_STATUS: Record<string, { variant: "default" | "secondary" | "outline" | "destructive"; label: string }> = {
   active: { variant: "secondary", label: "Claimed" },
-  proof_submitted: { variant: "default", label: "Proof submitted" },
+  proof_submitted: { variant: "default", label: "Awaiting verify" },
   verified: { variant: "default", label: "Verified" },
-  survived: { variant: "default", label: "Survived 24h" },
+  survived: { variant: "default", label: "Paid" },
   rejected: { variant: "destructive", label: "Rejected" },
   expired: { variant: "outline", label: "Expired" },
   removed: { variant: "destructive", label: "Removed" },
@@ -39,75 +39,56 @@ export default async function BuyerPostDetail({
   const { post, claims } = data;
 
   return (
-    <div className="container py-10 max-w-4xl">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mb-4"
-        render={<Link href="/buyer" />}
-      >
-        <ArrowLeft /> Back
+    <div className="max-w-3xl mx-auto px-6 md:px-16 py-16">
+      <Button asChild variant="ghost" className="mb-6 gap-2">
+        <Link href="/buyer">
+          <IconArrowLeft className="size-4" />
+          Back
+        </Link>
       </Button>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Badge variant="outline" className="mb-2">
-            r/{post.targetSub}
-          </Badge>
-          <h1 className="text-2xl font-semibold tracking-tight">{post.title}</h1>
+          <Badge variant="outline" className="mb-2">r/{post.targetSub}</Badge>
+          <h1 className="font-sans text-3xl font-extrabold tracking-tight">{post.title}</h1>
           <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
-            <span>{TIER_LABEL[post.tier]} ({TIER_MULTIPLIER[post.tier]}×)</span>
+            <span>{TIER_LABEL[post.tier]}</span>
             <span>·</span>
-            <span>{formatUsd(post.bountyCents, { withCents: true })} bounty</span>
+            <span>{formatUsd(post.bountyCents, { withCents: true })}</span>
             <span>·</span>
-            <span>Posted {new Date(post.createdAt).toLocaleString()}</span>
+            <span>{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>
-        <Badge variant="default">{post.status}</Badge>
+        <Badge variant="secondary">{post.status}</Badge>
       </div>
 
-      <Separator className="my-6" />
+      <Separator className="my-8" />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Post body</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/30 rounded-lg p-4">
-              {post.body}
-            </pre>
-            {post.linkUrl && (
-              <div className="mt-3 text-sm">
-                <span className="text-muted-foreground">Link: </span>
-                <a
-                  className="text-foreground underline inline-flex items-center gap-1"
-                  href={post.linkUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {post.linkUrl} <ExternalLink className="size-3" />
-                </a>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Boosts</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <BoostRow on={post.survivalGuarantee} label="Survival guarantee" />
-            <BoostRow on={post.subMatchPriority} label="Sub-match priority" />
-            <BoostRow on={post.sameDayPublish} label="Same-day publish" />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="mt-6">
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Claims</CardTitle>
+          <CardTitle className="font-sans">Post body</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/50 rounded-lg p-4">{post.body}</pre>
+          {post.linkUrl && (
+            <div className="mt-3 text-sm">
+              <span className="text-muted-foreground">Link: </span>
+              <a
+                className="text-primary underline inline-flex items-center gap-1"
+                href={post.linkUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {post.linkUrl} <IconExternalLink className="size-3" />
+              </a>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-sans">Claims</CardTitle>
           <CardDescription>
             Posters who claimed this. Verified means the post URL was live and matched the body.
           </CardDescription>
@@ -122,34 +103,23 @@ export default async function BuyerPostDetail({
               {claims.map((c) => {
                 const status = CLAIM_STATUS[c.claim.status] ?? CLAIM_STATUS.active;
                 return (
-                  <div
-                    key={c.claim.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
-                  >
+                  <div key={c.claim.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
                     <div className="flex items-center gap-3">
-                      <div className="grid size-8 place-items-center rounded-full bg-orange-500/10 text-orange-500 font-medium text-xs">
+                      <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary font-medium text-xs">
                         u/
                       </div>
                       <div>
-                        <div className="text-sm font-medium">
-                          {c.redditAccount?.username ?? "—"}
-                        </div>
+                        <div className="text-sm font-medium">{c.redditAccount?.username ?? "—"}</div>
                         <div className="text-xs text-muted-foreground">
-                          {c.redditAccount?.karma?.toLocaleString()} karma · claimed{" "}
-                          {new Date(c.claim.claimedAt).toLocaleString()}
+                          {c.redditAccount?.karma?.toLocaleString()} karma · claimed {new Date(c.claim.claimedAt).toLocaleString()}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {c.claim.redditPostUrl && (
-                        <Button variant="ghost" size="sm">
-                          <a
-                            href={c.claim.redditPostUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1"
-                          >
-                            View on Reddit <ExternalLink className="size-3" />
+                        <Button asChild variant="ghost" size="sm">
+                          <a href={c.claim.redditPostUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">
+                            View <IconExternalLink className="size-3" />
                           </a>
                         </Button>
                       )}
@@ -162,19 +132,6 @@ export default async function BuyerPostDetail({
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function BoostRow({ on, label }: { on: boolean; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      {on ? (
-        <ShieldCheck className="size-4 text-orange-500" />
-      ) : (
-        <ShieldAlert className="size-4 text-muted-foreground" />
-      )}
-      <span className={on ? "" : "text-muted-foreground"}>{label}</span>
     </div>
   );
 }

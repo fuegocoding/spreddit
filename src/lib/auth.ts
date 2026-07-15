@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import EmailProvider from "next-auth/providers/nodemailer";
 import Reddit from "next-auth/providers/reddit";
 import { db, schema } from "@/db";
 import { randomUUID } from "node:crypto";
@@ -24,39 +23,6 @@ declare module "next-auth" {
   }
 }
 
-const providers: any[] = [];
-
-if (process.env.EMAIL_SERVER_HOST && process.env.EMAIL_FROM) {
-  providers.push(
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT ?? 587),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASS,
-        },
-      },
-      from: process.env.EMAIL_FROM,
-    })
-  );
-}
-
-if (process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET) {
-  providers.push(
-    Reddit({
-      clientId: process.env.REDDIT_CLIENT_ID,
-      clientSecret: process.env.REDDIT_CLIENT_SECRET,
-      authorization: {
-        params: {
-          duration: "permanent",
-          scope: "identity",
-        },
-      },
-    })
-  );
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db as any, {
     usersTable: users as any,
@@ -64,7 +30,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     sessionsTable: sessions as any,
     verificationTokensTable: verificationTokens as any,
   }),
-  providers,
+  providers: [
+    Reddit({
+      clientId: process.env.REDDIT_CLIENT_ID!,
+      clientSecret: process.env.REDDIT_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          duration: "permanent",
+          scope: "identity",
+        },
+      },
+    }),
+  ],
   pages: {
     signIn: "/login",
   },
@@ -76,10 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = (user as any).role ?? "buyer";
         token.balanceCents = (user as any).balanceCents ?? 0;
       }
-      if (
-        token.id &&
-        (trigger === "signIn" || trigger === "update" || !token.role)
-      ) {
+      if (token.id && (trigger === "signIn" || trigger === "update" || !token.role)) {
         const { eq } = await import("drizzle-orm");
         const u = await db.query.users.findFirst({
           where: eq(users.id, token.id as string),
@@ -103,8 +77,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account?.provider === "reddit" && profile) {
         const { eq } = await import("drizzle-orm");
         const redditId = (profile as any).id ?? (profile as any).sub;
-        const redditUsername =
-          (profile as any).name ?? (profile as any).preferred_username;
+        const redditUsername = (profile as any).name ?? (profile as any).preferred_username;
         if (!redditId || !redditUsername) return true;
         const existing = await db.query.redditAccounts.findFirst({
           where: eq(redditAccounts.redditId, redditId),

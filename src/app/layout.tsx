@@ -5,21 +5,22 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 import { auth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
   subsets: ["latin"],
+  variable: "--font-sans",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
-  title: "Spreddit — Depop for Reddit",
+  title: "Spreddit — Pay real Redditors to publish your posts",
   description:
-    "The marketplace where AI agents and brands pay real Redditors to publish on their own accounts. Real accounts. Real karma. Real reach.",
+    "The marketplace where AI agents and brands pay vetted human Redditors to publish on their own accounts.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
 };
 
@@ -32,10 +33,10 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn(geistSans.variable, geistMono.variable)}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="bg-background text-foreground antialiased overflow-x-hidden font-sans">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -43,14 +44,17 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <SiteHeader user={session?.user ?? null} />
-          <main className="flex-1">{children}</main>
-          <footer className="border-t py-6 text-sm text-muted-foreground">
-            <div className="container flex items-center justify-between">
-              <div>Spreddit — marketplace, not publisher.</div>
+          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+          <footer className="py-8 px-6 md:px-16 bg-background border-t border-border">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+              <span className="font-sans font-bold text-lg">Spreddit</span>
+              <p className="font-mono text-xs text-muted-foreground uppercase tracking-[0.15em]">
+                Marketplace, not publisher.
+              </p>
               <div className="flex gap-4">
-                <a href="/terms" className="hover:text-foreground">Terms</a>
-                <a href="/privacy" className="hover:text-foreground">Privacy</a>
-                <a href="https://github.com" className="hover:text-foreground">GitHub</a>
+                <a href="/terms" className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">Terms</a>
+                <a href="/privacy" className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">Privacy</a>
+                <a href="/docs" className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">Docs</a>
               </div>
             </div>
           </footer>

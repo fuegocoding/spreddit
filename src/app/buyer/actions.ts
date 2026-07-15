@@ -8,12 +8,7 @@ import { redirect } from "next/navigation";
 import { newId } from "@/lib/ids";
 import { isSubAllowed } from "@/lib/subs";
 import { z } from "zod";
-import { dollarsToCents } from "@/lib/money";
-import {
-  TIER_MULTIPLIER,
-  calculatePlatformFee,
-  calculatePosterEarnings,
-} from "@/lib/pricing";
+import { calculatePosterEarnings, TIER_PRICE_CENTS } from "@/lib/pricing";
 
 const createPostSchema = z.object({
   targetSub: z.string().min(2).max(40),
@@ -22,24 +17,7 @@ const createPostSchema = z.object({
   linkUrl: z.string().url().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
   tier: z.enum(["random", "high_karma", "dedicated"]),
-  baseBounty: z.coerce.number().min(5).max(500),
-  survivalGuarantee: z.coerce.boolean().optional().default(false),
-  subMatchPriority: z.coerce.boolean().optional().default(false),
-  sameDayPublish: z.coerce.boolean().optional().default(false),
 });
-
-function calculateBountyCents(
-  baseCents: number,
-  tier: keyof typeof TIER_MULTIPLIER,
-  boosts: { survival?: boolean; subMatch?: boolean; sameDay?: boolean }
-) {
-  const tiered = Math.round(baseCents * TIER_MULTIPLIER[tier]);
-  const boostTotal =
-    (boosts.survival ? 500 : 0) +
-    (boosts.subMatch ? 200 : 0) +
-    (boosts.sameDay ? 300 : 0);
-  return tiered + boostTotal;
-}
 
 export async function createPostAction(formData: FormData) {
   const session = await auth();
@@ -52,22 +30,13 @@ export async function createPostAction(formData: FormData) {
     linkUrl: formData.get("linkUrl") ?? "",
     imageUrl: formData.get("imageUrl") ?? "",
     tier: formData.get("tier"),
-    baseBounty: formData.get("baseBounty"),
-    survivalGuarantee: formData.get("survivalGuarantee") === "on",
-    subMatchPriority: formData.get("subMatchPriority") === "on",
-    sameDayPublish: formData.get("sameDayPublish") === "on",
   });
 
   if (!isSubAllowed(parsed.targetSub)) {
     throw new Error(`r/${parsed.targetSub} is not in the monetizable sub list.`);
   }
 
-  const baseCents = dollarsToCents(parsed.baseBounty);
-  const totalBounty = calculateBountyCents(baseCents, parsed.tier, {
-    survival: parsed.survivalGuarantee,
-    subMatch: parsed.subMatchPriority,
-    sameDay: parsed.sameDayPublish,
-  });
+  const bountyCents = TIER_PRICE_CENTS[parsed.tier];
 
   const id = newId();
   await db.insert(schema.posts).values({
@@ -79,10 +48,10 @@ export async function createPostAction(formData: FormData) {
     linkUrl: parsed.linkUrl || null,
     imageUrl: parsed.imageUrl || null,
     tier: parsed.tier,
-    bountyCents: totalBounty,
-    survivalGuarantee: parsed.survivalGuarantee,
-    subMatchPriority: parsed.subMatchPriority,
-    sameDayPublish: parsed.sameDayPublish,
+    bountyCents,
+    survivalGuarantee: false,
+    subMatchPriority: false,
+    sameDayPublish: false,
     status: "available",
   });
 

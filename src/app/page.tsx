@@ -2,77 +2,70 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
-  ArrowRight,
-  Bot,
-  Coins,
-  Globe,
-  Shield,
-  Sparkles,
-  TrendingUp,
-  Users,
-  Zap,
-  Check,
-  X,
-} from "lucide-react";
-import { TIER_MULTIPLIER } from "@/lib/pricing";
-import { formatUsd, dollarsToCents } from "@/lib/money";
+  IconBrandReddit,
+  IconRobot,
+  IconUsers,
+  IconCoin,
+  IconShieldCheck,
+  IconShieldX,
+  IconCheck,
+  IconTerminal,
+  IconArrowRight,
+  IconBolt,
+} from "@tabler/icons-react";
+import { TIER_LABEL, TIER_PRICE_CENTS } from "@/lib/pricing";
+import { formatUsd } from "@/lib/money";
 
 export default function Home() {
   return (
-    <div>
+    <>
       <Hero />
       <Tiers />
       <How />
       <ForAgents />
-      <Pricing />
       <Trust />
       <CTA />
-    </div>
+    </>
   );
 }
 
 function Hero() {
   return (
-    <section className="container py-20 md:py-28">
-      <div className="mx-auto max-w-3xl text-center">
-        <Badge variant="outline" className="mb-4">
-          <Sparkles className="size-3" /> Now in beta — v0.1
-        </Badge>
-        <h1 className="text-balance text-4xl font-semibold tracking-tight md:text-6xl">
-          The marketplace where <span className="text-orange-500">real Redditors</span>{" "}
-          publish for AI agents and brands.
+    <section className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6 py-24 relative overflow-hidden">
+      <div className="max-w-3xl mx-auto flex flex-col items-center gap-6 relative z-10">
+        <h1 className="font-sans text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-foreground to-foreground/70 leading-[1.05] py-1">
+          Real Redditors.<br />Real reach.
         </h1>
-        <p className="mt-6 text-balance text-lg text-muted-foreground">
-          Spreddit is a payment rail, not a publisher. You submit posts.
-          Vetted, karma-rich humans publish them on their own accounts. Spreddit
-          never touches Reddit.
+        <p className="text-lg md:text-xl text-muted-foreground max-w-xl font-medium leading-relaxed">
+          The marketplace where AI agents and brands pay vetted human Redditors
+          to publish on their own accounts. Spreddit never touches Reddit.
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" render={<Link href="/login" />}>
-            Get started <ArrowRight />
+        <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
+          <Button asChild size="lg" className="gap-2 text-base h-11 px-6">
+            <Link href="/login">
+              Get started
+              <IconArrowRight className="size-4" />
+            </Link>
           </Button>
-          <Button size="lg" variant="outline" render={<Link href="/feed" />}>
-            Browse the feed
+          <Button asChild variant="outline" size="lg" className="gap-2 text-base h-11 px-6">
+            <Link href="/feed">Browse the feed</Link>
           </Button>
         </div>
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Shield className="size-4" /> No automation. No scraping.
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Zap className="size-4" /> One-line MCP install
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Globe className="size-4" /> Global supply
-          </span>
+        <div className="mt-10 w-full max-w-xl">
+          <div className="rounded-lg border border-border bg-muted/50 p-4 font-mono text-sm text-left">
+            <div className="flex items-center gap-2 mb-2">
+              <IconTerminal className="size-4 text-primary" />
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-bold">One-line install for AI agents</span>
+            </div>
+            <code className="text-foreground">
+              <span className="text-muted-foreground">$</span> npx spreddit-mcp add --agent claude-code
+            </code>
+          </div>
         </div>
       </div>
     </section>
@@ -81,114 +74,95 @@ function Hero() {
 
 function Tiers() {
   return (
-    <section className="border-y bg-muted/30">
-      <div className="container py-16">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">
-            Pick the account quality you need
+    <section id="pricing" className="py-24 px-6 md:px-16 bg-muted/50">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-12 text-center">
+          <p className="font-mono text-xs text-primary uppercase tracking-[0.2em] mb-3">
+            Pricing
+          </p>
+          <h2 className="font-sans text-4xl md:text-5xl font-extrabold tracking-tight">
+            Flat per post. No surprises.
           </h2>
-          <p className="mt-3 text-muted-foreground">
-            Multipliers apply on top of the base bounty you set.
+          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
+            Pay only when a post is verified. Price depends on account quality.
           </p>
         </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          <TierCard
-            tier="random"
-            title="Random"
-            requirements="1k+ karma · 6mo+ account"
-            examplePost={25}
-            description="Volume play for low-stakes subs. The default choice."
-          />
-          <TierCard
-            tier="high_karma"
-            title="High-karma"
-            requirements="10k+ karma · 1yr+ account"
-            examplePost={25}
-            featured
-            description="Mod-strict subs. Brand-safe. Survives AutoModerator."
-          />
-          <TierCard
-            tier="dedicated"
-            title="Dedicated"
-            requirements="50k+ karma · 2yr+ account"
-            examplePost={25}
-            description="Hero posts. Front-page pushes. One-off campaigns."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {(["random", "high_karma", "dedicated"] as const).map((t) => {
+            const featured = t === "high_karma";
+            return (
+              <Card key={t} className={featured ? "border-primary/30" : undefined}>
+                <CardContent className="p-6 flex flex-col gap-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-sans text-xl font-bold">{TIER_LABEL[t]}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t === "random" && "1k+ karma · 6mo+ account"}
+                        {t === "high_karma" && "10k+ karma · 1yr+ account"}
+                        {t === "dedicated" && "50k+ karma · 2yr+ account"}
+                      </p>
+                    </div>
+                    {featured && (
+                      <Badge className="text-xs">Popular</Badge>
+                    )}
+                  </div>
+                  <div className="text-4xl font-black font-sans">
+                    {formatUsd(TIER_PRICE_CENTS[t], { withCents: true })}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    per published post · poster earns {formatUsd(TIER_PRICE_CENTS[t] - Math.round(TIER_PRICE_CENTS[t] * 0.2), { withCents: true })}
+                  </div>
+                  <Separator />
+                  <p className="text-sm text-muted-foreground">
+                    {t === "random" && "For volume posts in low-stakes subs."}
+                    {t === "high_karma" && "Mod-strict subs. Brand-safe. Survives AutoMod."}
+                    {t === "dedicated" && "Hero posts. Front-page pushes. One-off campaigns."}
+                  </p>
+                  <Button asChild variant={featured ? "default" : "outline"} className="w-full mt-auto">
+                    <Link href="/login">Start with {TIER_LABEL[t]}</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-function TierCard({
-  tier,
-  title,
-  requirements,
-  examplePost,
-  description,
-  featured,
-}: {
-  tier: keyof typeof TIER_MULTIPLIER;
-  title: string;
-  requirements: string;
-  examplePost: number;
-  description: string;
-  featured?: boolean;
-}) {
-  const total = examplePost * TIER_MULTIPLIER[tier];
-  return (
-    <Card className={featured ? "ring-2 ring-orange-500" : undefined}>
-      {featured && (
-        <div className="px-(--card-spacing) pt-(--card-spacing)">
-          <Badge className="bg-orange-500 text-white hover:bg-orange-500">
-            Most popular
-          </Badge>
-        </div>
-      )}
-      <CardHeader>
-        <CardTitle className="text-xl">{title}</CardTitle>
-        <CardDescription>{requirements}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-semibold">{formatUsd(dollarsToCents(total))}</div>
-        <div className="text-xs text-muted-foreground">
-          for a {formatUsd(dollarsToCents(examplePost))} base bounty ({TIER_MULTIPLIER[tier]}×)
-        </div>
-        <Separator className="my-4" />
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
 function How() {
   return (
-    <section id="how" className="container py-20">
-      <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-semibold tracking-tight">How it works</h2>
-        <p className="mt-3 text-muted-foreground">
-          Three steps. No automation. No Reddit API.
-        </p>
-      </div>
-      <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Step
-          icon={<Bot className="size-5" />}
-          step="1"
-          title="Submit a post"
-          body="Paste a title, body, and target subreddit. Pick a tier and bounty. Pay into escrow."
-        />
-        <Step
-          icon={<Users className="size-5" />}
-          step="2"
-          title="A human claims it"
-          body="Vetted Redditors browse a feed filtered to the subs they actually use. They claim what they like."
-        />
-        <Step
-          icon={<Coins className="size-5" />}
-          step="3"
-          title="They publish, you pay"
-          body="Human posts on their own account. We verify the URL and a 24h survival check. Escrow releases."
-        />
+    <section id="how" className="py-24 px-6 md:px-16 bg-background">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-12 text-center">
+          <p className="font-mono text-xs text-primary uppercase tracking-[0.2em] mb-3">
+            How it works
+          </p>
+          <h2 className="font-sans text-4xl md:text-5xl font-extrabold tracking-tight">
+            Three steps. No automation.
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Step
+            icon={<IconRobot className="size-8 text-primary" />}
+            step="01"
+            title="Submit a post"
+            body="Paste a title, body, and target subreddit. Pick a tier. Pay into escrow."
+          />
+          <Step
+            icon={<IconUsers className="size-8 text-primary" />}
+            step="02"
+            title="A human claims it"
+            body="Vetted Redditors browse a feed filtered to the subs they use. They claim what they like."
+          />
+          <Step
+            icon={<IconCoin className="size-8 text-primary" />}
+            step="03"
+            title="They publish, you pay"
+            body="Human posts on their own account. We verify the URL and run a 24h survival check. Escrow releases."
+          />
+        </div>
       </div>
     </section>
   );
@@ -206,184 +180,149 @@ function Step({
   body: string;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <span className="grid size-9 place-items-center rounded-lg bg-orange-500/10 text-orange-500">
-            {icon}
-          </span>
-          <span className="text-3xl font-semibold text-muted-foreground/30">
-            {step}
-          </span>
+    <Card className="h-full transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1">
+      <CardContent className="p-6 flex flex-col gap-4">
+        <div className="flex justify-between items-start">
+          {icon}
+          <span className="font-sans text-3xl font-black text-muted-foreground/30">{step}</span>
         </div>
-        <CardTitle className="mt-4">{title}</CardTitle>
-        <CardDescription>{body}</CardDescription>
-      </CardHeader>
+        <h3 className="font-sans text-lg font-bold">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+      </CardContent>
     </Card>
   );
 }
 
 function ForAgents() {
   return (
-    <section className="border-y bg-muted/30">
-      <div className="container py-20">
-        <div className="grid gap-10 md:grid-cols-2 md:items-center">
-          <div>
-            <Badge variant="outline" className="mb-3">
-              <Bot className="size-3" /> For AI agents
-            </Badge>
-            <h2 className="text-3xl font-semibold tracking-tight">
-              Install Spreddit on your agent in one line.
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Native MCP integration for Claude Code, OpenCode, Hermes,
-              OpenClaw, and Codex CLI. Your agent can run a full campaign
-              loop unattended.
-            </p>
-            <div className="mt-6 rounded-lg border bg-card p-4 font-mono text-sm">
-              <span className="text-muted-foreground">$</span>{" "}
-              npx spreddit-mcp add --agent claude-code
-            </div>
-            <ul className="mt-6 space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <Check className="mt-0.5 size-4 text-orange-500" />
-                <span>
-                  <code className="text-xs">spreddit_create_post</code> — submit a post
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Check className="mt-0.5 size-4 text-orange-500" />
-                <span>
-                  <code className="text-xs">spreddit_check_status</code> — wait for publish
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Check className="mt-0.5 size-4 text-orange-500" />
-                <span>
-                  <code className="text-xs">spreddit_list_subs</code> — discover monetizable subs
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Check className="mt-0.5 size-4 text-orange-500" />
-                <span>
-                  <code className="text-xs">spreddit_account_balance</code> — track spend
-                </span>
-              </li>
-            </ul>
+    <section className="py-24 px-6 md:px-16 bg-muted/50">
+      <div className="max-w-5xl mx-auto grid gap-10 md:grid-cols-2 md:items-center">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <IconBolt className="size-4 text-primary" />
+            <span className="font-mono text-xs text-primary uppercase tracking-[0.2em] font-bold">
+              For AI agents
+            </span>
           </div>
-          <div className="rounded-xl border bg-card p-6 shadow-sm">
-            <pre className="overflow-x-auto text-xs leading-relaxed">
+          <h2 className="font-sans text-4xl font-extrabold tracking-tight">
+            Install Spreddit on your agent in one line.
+          </h2>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            Native MCP integration for Claude Code, OpenCode, Hermes, OpenClaw,
+            and Codex CLI. Your agent can run a full campaign loop unattended.
+          </p>
+          <div className="mt-6 rounded-lg border border-border bg-background p-4 font-mono text-sm">
+            <span className="text-muted-foreground">$</span> npx spreddit-mcp add --agent claude-code
+          </div>
+          <ul className="mt-6 space-y-2 text-sm">
+            <li className="flex items-start gap-2">
+              <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
+              <code className="text-xs">spreddit_create_post</code>
+              <span className="text-muted-foreground">— submit a post</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
+              <code className="text-xs">spreddit_check_status</code>
+              <span className="text-muted-foreground">— wait for publish</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
+              <code className="text-xs">spreddit_list_subs</code>
+              <span className="text-muted-foreground">— discover monetizable subs</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
+              <code className="text-xs">spreddit_account_balance</code>
+              <span className="text-muted-foreground">— track spend</span>
+            </li>
+          </ul>
+        </div>
+        <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
+          <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-muted-foreground">
 {`// agent loop
-const post = await spreddit.createPost({
+const post = await spreddit_create_post({
   subreddit: "SaaS",
   title: "I built a Reddit post marketplace",
   body: "...",
-  bounty: 3000,        // $30
-  tier: "high_karma",   // 2.5x
+  tier: "high_karma",
 });
 
 while (true) {
-  const s = await spreddit.checkStatus(post.id);
-  if (s.status === "verified") break;
-  if (s.status === "failed") break;
-  await sleep(60000);
+  const s = await spreddit_check_status(
+    { post_id: post.id }
+  );
+  if (["verified","paid","failed"].includes(
+    s.status)) break;
+  await sleep(60_000);
 }`}
-            </pre>
-          </div>
+          </pre>
         </div>
       </div>
     </section>
-  );
-}
-
-function Pricing() {
-  return (
-    <section id="pricing" className="container py-20">
-      <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-semibold tracking-tight">Simple pricing</h2>
-        <p className="mt-3 text-muted-foreground">
-          20% platform fee. No subscriptions to start. Pay only when a post is
-          verified.
-        </p>
-      </div>
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
-        <FeeRow title="Buyer pays" body="Base bounty × tier multiplier + 20% fee" />
-        <FeeRow title="Poster receives" body="Buyer pays − 20% platform fee" />
-        <FeeRow title="Optional boosts" body="+$5 survival · +$2 sub-match · +$3 same-day" />
-      </div>
-    </section>
-  );
-}
-
-function FeeRow({ title, body }: { title: string; body: string }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{body}</CardDescription>
-      </CardHeader>
-    </Card>
   );
 }
 
 function Trust() {
   return (
-    <section className="border-y bg-muted/30">
-      <div className="container py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">What Spreddit is not</h2>
-          <p className="mt-3 text-muted-foreground">
-            We get this question a lot. Here&apos;s the line we don&apos;t cross.
+    <section className="py-24 px-6 md:px-16 bg-background">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-12 text-center">
+          <p className="font-mono text-xs text-primary uppercase tracking-[0.2em] mb-3">
+            Transparency
           </p>
+          <h2 className="font-sans text-4xl md:text-5xl font-extrabold tracking-tight">
+            What Spreddit is not.
+          </h2>
         </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <X className="size-4 text-red-500" />
-                <span>We don&apos;t post on your behalf</span>
-              </CardTitle>
-              <CardDescription>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <IconShieldX className="size-5 text-destructive" />
+                <h3 className="font-sans font-bold">We don&apos;t post on your behalf</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 No automation. No API calls. No scraping. Every post is published
                 by a human, on their own account, from their own device.
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <X className="size-4 text-red-500" />
-                <span>We don&apos;t control what posters publish</span>
-              </CardTitle>
-              <CardDescription>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <IconShieldX className="size-5 text-destructive" />
+                <h3 className="font-sans font-bold">We don&apos;t control what posters publish</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Posters choose which posts to claim. We&apos;re a marketplace and a
                 payment rail. We&apos;re not a publisher.
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Check className="size-4 text-orange-500" />
-                <span>We verify and pay</span>
-              </CardTitle>
-              <CardDescription>
-                Auto-fetch the post URL, match the text, run a 24h survival
-                check. If the post is mod-removed, you get refunded.
-              </CardDescription>
-            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <IconShieldCheck className="size-5 text-primary" />
+                <h3 className="font-sans font-bold">We verify before paying</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We fetch the Reddit post URL, match it against the submission,
+                and run a 24h survival check. Posters only get paid for posts
+                that survive.
+              </p>
+            </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Check className="size-4 text-orange-500" />
-                <span>We hold funds in escrow</span>
-              </CardTitle>
-              <CardDescription>
-                Funds are held by Stripe until the post is verified. Posters
-                only get paid for posts that survive.
-              </CardDescription>
-            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <IconShieldCheck className="size-5 text-primary" />
+                <h3 className="font-sans font-bold">We hold funds in escrow</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Funds are held by Stripe until the post is verified and survives
+                24h. No verified post, no payout.
+              </p>
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -393,24 +332,23 @@ function Trust() {
 
 function CTA() {
   return (
-    <section className="container py-20">
-      <div className="rounded-2xl border bg-gradient-to-br from-orange-500/10 via-background to-background p-10 text-center md:p-16">
-        <TrendingUp className="mx-auto size-10 text-orange-500" />
-        <h2 className="mt-6 text-3xl font-semibold tracking-tight md:text-4xl">
-          Real reach on the front page of the internet.
+    <section className="py-24 px-6 md:px-16 bg-muted/50">
+      <div className="max-w-2xl mx-auto text-center">
+        <h2 className="font-sans text-4xl md:text-5xl font-extrabold tracking-tight">
+          Ready to post?
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-          Set up your first campaign in under a minute. The first 100 posts are
-          free while we&apos;re in beta.
+        <p className="mt-3 text-muted-foreground max-w-md mx-auto">
+          Set up your first campaign in under a minute.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" render={<Link href="/login" />}>
-            Get started <ArrowRight />
+          <Button asChild size="lg" className="gap-2 text-base h-11 px-6">
+            <Link href="/login">
+              Get started
+              <IconArrowRight className="size-4" />
+            </Link>
           </Button>
-          <Button size="lg" variant="outline">
-            <a href="https://github.com" target="_blank" rel="noreferrer">
-              Read the docs
-            </a>
+          <Button asChild variant="outline" size="lg" className="text-base h-11 px-6">
+            <Link href="/docs">Read the docs</Link>
           </Button>
         </div>
       </div>

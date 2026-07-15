@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Copy, Check } from "lucide-react";
+import { IconCopy, IconCheck } from "@tabler/icons-react";
 
 export function ApiKeyForm({
   action,
@@ -31,31 +31,25 @@ export function ApiKeyForm({
   if (created) {
     return (
       <div className="space-y-3">
-        <div className="rounded-lg border border-orange-500/50 bg-orange-500/5 p-3 text-sm">
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
           <div className="font-medium">Your new API key</div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            Copy it now. We only show it once.
-          </div>
+          <div className="mt-1 text-xs text-muted-foreground">Copy it now. We only show it once.</div>
           <div className="mt-2 flex items-center gap-2">
-            <code className="flex-1 overflow-x-auto rounded bg-muted px-2 py-1 font-mono text-xs">
-              {created}
-            </code>
+            <code className="flex-1 overflow-x-auto rounded bg-muted px-2 py-1 font-mono text-xs">{created}</code>
             <Button
               variant="outline"
-              size="sm"
+              size="icon-sm"
               onClick={() => {
                 navigator.clipboard.writeText(created);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1500);
               }}
             >
-              {copied ? <Check /> : <Copy />}
+              {copied ? <IconCheck className="size-4" /> : <IconCopy className="size-4" />}
             </Button>
           </div>
         </div>
-        <Button variant="outline" onClick={() => setCreated(null)}>
-          Create another
-        </Button>
+        <Button variant="outline" onClick={() => setCreated(null)}>Create another</Button>
       </div>
     );
   }
@@ -64,17 +58,9 @@ export function ApiKeyForm({
     <form action={handleSubmit} className="flex items-end gap-2">
       <div className="flex-1">
         <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          name="name"
-          required
-          placeholder="agent-claude-code"
-          className="mt-1"
-        />
+        <Input id="name" name="name" required placeholder="agent-claude-code" className="mt-2" />
       </div>
-      <Button type="submit" disabled={pending}>
-        {pending ? "Creating…" : "Create key"}
-      </Button>
+      <Button type="submit" disabled={pending}>{pending ? "Creating..." : "Create key"}</Button>
     </form>
   );
 }

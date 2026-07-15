@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { db, schema } from "@/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { MONETIZABLE_SUBS, isSubAllowed } from "@/lib/subs";
 import { z } from "zod";
 import { newId } from "@/lib/ids";
-import {
-  TIER_MULTIPLIER,
-  calculatePlatformFee,
-  calculatePosterEarnings,
-} from "@/lib/pricing";
-import { dollarsToCents } from "@/lib/money";
+import { calculatePlatformFee, calculatePosterEarnings, TIER_PRICE_CENTS } from "@/lib/pricing";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -71,10 +66,6 @@ const createSchema = z.object({
   linkUrl: z.string().url().optional().nullable(),
   imageUrl: z.string().url().optional().nullable(),
   tier: z.enum(["random", "high_karma", "dedicated"]),
-  baseBounty: z.number().min(5).max(500),
-  survivalGuarantee: z.boolean().optional(),
-  subMatchPriority: z.boolean().optional(),
-  sameDayPublish: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -83,10 +74,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (user.role === "poster") {
-    return NextResponse.json(
-      { error: "Posters cannot create posts" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Posters cannot create posts" }, { status: 403 });
   }
 
   let body: unknown;
@@ -98,26 +86,13 @@ export async function POST(request: Request) {
 
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "invalid input", details: parsed.error.flatten() },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "invalid input", details: parsed.error.flatten() }, { status: 400 });
   }
   if (!isSubAllowed(parsed.data.targetSub)) {
-    return NextResponse.json(
-      { error: `r/${parsed.data.targetSub} is not in the monetizable sub list` },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: `r/${parsed.data.targetSub} is not in the monetizable sub list` }, { status: 400 });
   }
 
-  const baseCents = dollarsToCents(parsed.data.baseBounty);
-  const tiered = Math.round(baseCents * TIER_MULTIPLIER[parsed.data.tier]);
-  const boostTotal =
-    (parsed.data.survivalGuarantee ? 500 : 0) +
-    (parsed.data.subMatchPriority ? 200 : 0) +
-    (parsed.data.sameDayPublish ? 300 : 0);
-  const bountyCents = tiered + boostTotal;
-
+  const bountyCents = TIER_PRICE_CENTS[parsed.data.tier];
   const id = newId();
   await db.insert(schema.posts).values({
     id,
@@ -129,9 +104,9 @@ export async function POST(request: Request) {
     imageUrl: parsed.data.imageUrl ?? null,
     tier: parsed.data.tier,
     bountyCents,
-    survivalGuarantee: parsed.data.survivalGuarantee ?? false,
-    subMatchPriority: parsed.data.subMatchPriority ?? false,
-    sameDayPublish: parsed.data.sameDayPublish ?? false,
+    survivalGuarantee: false,
+    subMatchPriority: false,
+    sameDayPublish: false,
     status: "available",
   });
 
@@ -142,18 +117,4 @@ export async function POST(request: Request) {
     platformFeeCents: calculatePlatformFee(bountyCents),
     posterPayoutCents: calculatePosterEarnings(bountyCents),
   });
-}
-
-export async function LIST() {
-  const user = await getApiUser();
-  if (!user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  const posts = await db
-    .select()
-    .from(schema.posts)
-    .where(eq(schema.posts.buyerId, user.id))
-    .orderBy(desc(schema.posts.createdAt))
-    .limit(100);
-  return NextResponse.json({ posts });
 }

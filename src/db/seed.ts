@@ -1,7 +1,7 @@
 import { db, schema, sqliteSchema } from "@/db";
 const s: typeof sqliteSchema = schema as any;
 import { newId } from "@/lib/ids";
-import { TIER_MULTIPLIER, calculatePosterEarnings } from "@/lib/pricing";
+import { TIER_PRICE_CENTS } from "@/lib/pricing";
 import { dollarsToCents } from "@/lib/money";
 import { eq } from "drizzle-orm";
 
@@ -124,8 +124,7 @@ Curious what other agent devs are doing for distribution.`,
   ];
 
   for (const p of samplePosts) {
-    const baseCents = dollarsToCents(p.baseBounty);
-    const bountyCents = Math.round(baseCents * TIER_MULTIPLIER[p.tier]);
+    const bountyCents = TIER_PRICE_CENTS[p.tier];
     await db.insert(s.posts).values({
       id: newId(),
       buyerId,

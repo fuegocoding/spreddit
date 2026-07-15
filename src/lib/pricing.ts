@@ -1,13 +1,7 @@
-export const TIER_MULTIPLIER = {
-  random: 1.0,
-  high_karma: 2.5,
-  dedicated: 5.0,
-} as const;
-
 export const TIER_LABEL = {
-  random: "Random",
-  high_karma: "High-karma",
-  dedicated: "Dedicated",
+  random: "Standard",
+  high_karma: "Premium",
+  dedicated: "Pro",
 } as const;
 
 export const TIER_REQUIREMENTS = {
@@ -16,21 +10,13 @@ export const TIER_REQUIREMENTS = {
   dedicated: { minKarma: 50000, minAgeDays: 730 },
 } as const;
 
-export const BASE_BOUNTY_CENTS = 1000;
-export const PLATFORM_FEE_BPS = 2000;
+export const TIER_PRICE_CENTS: Record<keyof typeof TIER_LABEL, number> = {
+  random: 399,
+  high_karma: 699,
+  dedicated: 999,
+};
 
-export function calculateBounty(
-  baseCents: number,
-  tier: keyof typeof TIER_MULTIPLIER,
-  boosts: { survival?: boolean; subMatch?: boolean; sameDay?: boolean } = {}
-) {
-  const tiered = Math.round(baseCents * TIER_MULTIPLIER[tier]);
-  const boostTotal =
-    (boosts.survival ? 500 : 0) +
-    (boosts.subMatch ? 200 : 0) +
-    (boosts.sameDay ? 300 : 0);
-  return tiered + boostTotal;
-}
+export const PLATFORM_FEE_BPS = 2000;
 
 export function calculatePlatformFee(amountCents: number): number {
   return Math.round((amountCents * PLATFORM_FEE_BPS) / 10000);
@@ -38,4 +24,8 @@ export function calculatePlatformFee(amountCents: number): number {
 
 export function calculatePosterEarnings(amountCents: number): number {
   return amountCents - calculatePlatformFee(amountCents);
+}
+
+export function getTierPrice(tier: keyof typeof TIER_LABEL): number {
+  return TIER_PRICE_CENTS[tier];
 }
