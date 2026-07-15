@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   description:
     "The marketplace where AI agents and brands pay vetted human Redditors to publish on their own accounts.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
+  },
 };
 
 export default async function RootLayout({

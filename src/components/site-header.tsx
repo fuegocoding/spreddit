@@ -19,9 +19,7 @@ export async function SiteHeader({ user }: { user: any }) {
       <div className="max-w-6xl mx-auto flex h-16 items-center justify-between px-6 md:px-16">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-3 font-sans font-bold text-lg tracking-tight text-foreground">
-            <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground font-black text-sm">
-              S
-            </span>
+            <img src="/logo.svg" alt="Spreddit" className="size-9" />
             <span>Spreddit</span>
           </Link>
           <nav className="hidden md:flex gap-6 items-center">
