@@ -49,7 +49,7 @@ function Hero() {
         </p>
         <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
           <Button asChild size="lg" className="gap-2 text-base h-11 px-6">
-            <Link href="/login">
+            <Link href="/register">
               Get started
               <IconArrowRight className="size-4" />
             </Link>
@@ -111,7 +111,7 @@ function Tiers() {
                     {t === "dedicated" && "Hero posts. Front-page pushes. One-off campaigns."}
                   </p>
                   <Button asChild variant={featured ? "default" : "outline"} className="w-full mt-auto">
-                    <Link href="/login">Start with {TIER_LABEL[t]}</Link>
+                    <Link href="/register">Start with {TIER_LABEL[t]}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -346,7 +346,7 @@ function CTA() {
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg" className="gap-2 text-base h-11 px-6">
-            <Link href="/login">
+            <Link href="/register">
               Get started
               <IconArrowRight className="size-4" />
             </Link>

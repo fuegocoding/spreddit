@@ -1,5 +1,6 @@
 import { auth, signIn } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import {
   Card,
   CardContent,
@@ -11,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { IconMail, IconKey, IconCheck } from "@tabler/icons-react";
+import { IconMail, IconKey, IconCheck, IconLink } from "@tabler/icons-react";
 import { PasskeyLoginButton } from "@/components/passkey-auth";
+import Link from "next/link";
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ callbackUrl?: string; check?: string }>;
@@ -21,6 +23,8 @@ export default async function LoginPage(props: {
   const params = await props.searchParams;
   const callbackUrl = params.callbackUrl ?? "/";
   const checkEmail = params.check === "y";
+  const cookieStore = checkEmail ? await cookies() : null;
+  const magicLinkUrl = cookieStore?.get("magic_link_url")?.value ?? null;
 
   if (session?.user) {
     redirect(session.user.role === "poster" ? "/poster" : "/buyer");
@@ -38,9 +42,22 @@ export default async function LoginPage(props: {
               Check your email
             </CardTitle>
             <CardDescription>
-              We sent a magic link. Click it to sign in. It expires in 10 minutes.
+              {magicLinkUrl
+                ? "SMTP not configured. Use the link below to sign in:"
+                : "We sent a magic link. Click it to sign in. It expires in 10 minutes."}
             </CardDescription>
           </CardHeader>
+          {magicLinkUrl && (
+            <CardContent className="pb-6">
+              <a
+                href={magicLinkUrl}
+                className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+              >
+                <IconLink className="size-4 shrink-0" />
+                <span className="truncate">Click here to sign in</span>
+              </a>
+            </CardContent>
+          )}
         </Card>
       </div>
     );
@@ -93,6 +110,13 @@ export default async function LoginPage(props: {
               <IconMail className="size-4" />
               Send magic link
             </Button>
+
+            <p className="text-center text-xs text-muted-foreground">
+              No account?{" "}
+              <Link href="/register" className="text-primary underline underline-offset-2">
+                Sign up
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

@@ -1,6 +1,6 @@
 import { env } from "./env";
 
-export async function sendVerificationEmail(email: string, url: string) {
+export async function sendVerificationEmail(email: string, url: string): Promise<boolean> {
   const host = env.EMAIL_SERVER_HOST;
   const port = env.EMAIL_SERVER_PORT;
   const user = env.EMAIL_SERVER_USER;
@@ -8,7 +8,7 @@ export async function sendVerificationEmail(email: string, url: string) {
   const from = env.EMAIL_FROM;
   if (!host || !port || !user || !pass || !from) {
     console.log(`[auth] Magic link for ${email}: ${url}`);
-    return;
+    return false;
   }
 
   const nodemailer = await import("nodemailer");
@@ -26,6 +26,7 @@ export async function sendVerificationEmail(email: string, url: string) {
     text: `Sign in to Spreddit: ${url}\n\nThis link expires in 10 minutes.\n`,
     html: `<p>Sign in to Spreddit:</p><p><a href="${url}">${url}</a></p><p>This link expires in 10 minutes.</p>`,
   });
+  return true;
 }
 
 export async function sendWithdrawalNotice(email: string, amountCents: number) {

@@ -105,6 +105,9 @@ export async function SiteHeader({ user }: { user: any }) {
               <Button asChild variant="ghost" className="hidden sm:inline-flex">
                 <Link href="/feed">Browse feed</Link>
               </Button>
+              <Button asChild variant="ghost">
+                <Link href="/register">Sign up</Link>
+              </Button>
               <Button asChild>
                 <Link href="/login">Sign in</Link>
               </Button>

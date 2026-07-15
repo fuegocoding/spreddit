@@ -45,7 +45,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         : { host: "localhost", port: 587, auth: { user: "", pass: "" } },
       from: env.EMAIL_FROM ?? "noreply@spreddit.fuego.im",
       sendVerificationRequest: async ({ identifier: email, url }) => {
-        await sendVerificationEmail(email, url);
+        const sent = await sendVerificationEmail(email, url);
+        if (!sent) {
+          const { cookies } = await import("next/headers");
+          (await cookies()).set("magic_link_url", url, {
+            path: "/",
+            maxAge: 60 * 10,
+            httpOnly: false,
+            sameSite: "lax",
+          });
+        }
       },
     }),
   ],
@@ -83,4 +92,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
 });
