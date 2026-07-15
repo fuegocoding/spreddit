@@ -11,38 +11,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { IconMail, IconCheck, IconUser, IconUsers } from "@tabler/icons-react";
+import { IconMail, IconUser, IconUsers } from "@tabler/icons-react";
 import Link from "next/link";
 
-export default async function RegisterPage(props: {
-  searchParams: Promise<{ check?: string }>;
-}) {
+export default async function RegisterPage() {
   const session = await auth();
-  const params = await props.searchParams;
-  const checkEmail = params.check === "y";
 
   if (session?.user) {
     redirect(session.user.role === "poster" ? "/poster" : "/buyer");
-  }
-
-  if (checkEmail) {
-    return (
-      <div className="grid min-h-[calc(100vh-4rem)] place-items-center px-6 py-10">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <span className="mx-auto grid size-12 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <IconCheck className="size-7" />
-            </span>
-            <CardTitle className="mt-4 text-2xl font-sans font-bold">
-              Check your email
-            </CardTitle>
-            <CardDescription>
-              We sent a magic link. Click it to complete sign-up. It expires in 10 minutes.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
   }
 
   return (
