@@ -34,6 +34,8 @@ function makePostgres(): DB {
     idle_timeout: 20,
     connect_timeout: 10,
   });
+  // Pass the postgres schema so Drizzle generates Postgres SQL.
+  // The TS cast unifies the consumer-side types.
   return drizzlePostgres(client, { schema: postgresSchema as any }) as unknown as DB;
 }
 

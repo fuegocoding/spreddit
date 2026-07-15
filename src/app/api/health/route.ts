@@ -7,7 +7,12 @@ export async function GET() {
     return NextResponse.json({ status: "ok", driver: (await import("@/db")).driver });
   } catch (e: any) {
     return NextResponse.json(
-      { status: "error", error: e.message },
+      {
+        status: "error",
+        error: e.message,
+        cause: e.cause?.message,
+        stack: e.stack?.split("\n").slice(0, 5).join("\n"),
+      },
       { status: 503 }
     );
   }
