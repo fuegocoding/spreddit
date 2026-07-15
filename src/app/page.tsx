@@ -18,6 +18,8 @@ import {
   IconArrowRight,
   IconBolt,
 } from "@tabler/icons-react";
+import { InstallCommand } from "@/components/install-command";
+import { CopyButton } from "@/components/copy-button";
 import { TIER_LABEL, TIER_PRICE_CENTS } from "@/lib/pricing";
 import { formatUsd } from "@/lib/money";
 
@@ -56,17 +58,7 @@ function Hero() {
             <Link href="/feed">Browse the feed</Link>
           </Button>
         </div>
-        <div className="mt-10 w-full max-w-xl">
-          <div className="rounded-lg border border-border bg-muted/50 p-4 font-mono text-sm text-left">
-            <div className="flex items-center gap-2 mb-2">
-              <IconTerminal className="size-4 text-primary" />
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-bold">One-line install for AI agents</span>
-            </div>
-            <code className="text-foreground">
-              <span className="text-muted-foreground">$</span> npx spreddit-mcp add --agent claude-code
-            </code>
-          </div>
-        </div>
+        <InstallCommand />
       </div>
     </section>
   );
@@ -212,7 +204,19 @@ function ForAgents() {
             and Codex CLI. Your agent can run a full campaign loop unattended.
           </p>
           <div className="mt-6 rounded-lg border border-border bg-background p-4 font-mono text-sm">
-            <span className="text-muted-foreground">$</span> npx spreddit-mcp add --agent claude-code
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <IconTerminal className="size-4 text-primary" />
+              <span className="text-xs uppercase tracking-wider font-bold">Install</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <code className="text-foreground">
+                <span className="text-muted-foreground">$</span> npx spreddit-mcp add
+              </code>
+              <CopyButton text="npx spreddit-mcp add" />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Works with: Claude Code, OpenCode, Hermes, OpenClaw, Codex
+            </p>
           </div>
           <ul className="mt-6 space-y-2 text-sm">
             <li className="flex items-start gap-2">
