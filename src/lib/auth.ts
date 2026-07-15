@@ -1,10 +1,11 @@
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import Reddit from "next-auth/providers/reddit";
+import Email from "next-auth/providers/email";
 import { db, schema } from "@/db";
-import { randomUUID } from "node:crypto";
+import { sendVerificationEmail } from "./email";
+import { env } from "./env";
 
-const { users, accounts, sessions, verificationTokens, redditAccounts } = schema;
+const { users, accounts, sessions, verificationTokens } = schema;
 
 declare module "next-auth" {
   interface User {
@@ -31,19 +32,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     verificationTokensTable: verificationTokens as any,
   }),
   providers: [
-    Reddit({
-      clientId: process.env.REDDIT_CLIENT_ID!,
-      clientSecret: process.env.REDDIT_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          duration: "permanent",
-          scope: "identity",
-        },
+    Email({
+      server: env.EMAIL_SERVER_HOST
+        ? {
+            host: env.EMAIL_SERVER_HOST,
+            port: env.EMAIL_SERVER_PORT ?? 587,
+            auth: {
+              user: env.EMAIL_SERVER_USER ?? "",
+              pass: env.EMAIL_SERVER_PASS ?? "",
+            },
+          }
+        : { host: "localhost", port: 587, auth: { user: "", pass: "" } },
+      from: env.EMAIL_FROM ?? "noreply@spreddit.fuego.im",
+      sendVerificationRequest: async ({ identifier: email, url }) => {
+        await sendVerificationEmail(email, url);
       },
     }),
   ],
   pages: {
     signIn: "/login",
+    verifyRequest: "/login?check=y",
   },
   session: { strategy: "jwt" },
   callbacks: {
@@ -72,39 +80,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.balanceCents = (token.balanceCents as number) ?? 0;
       }
       return session;
-    },
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "reddit" && profile) {
-        const { eq } = await import("drizzle-orm");
-        const redditId = (profile as any).id ?? (profile as any).sub;
-        const redditUsername = (profile as any).name ?? (profile as any).preferred_username;
-        if (!redditId || !redditUsername) return true;
-        const existing = await db.query.redditAccounts.findFirst({
-          where: eq(redditAccounts.redditId, redditId),
-        });
-        if (!existing) {
-          const u = await db.query.users.findFirst({
-            where: eq(users.email, user.email!),
-          });
-          if (u) {
-            await db.insert(redditAccounts).values({
-              id: randomUUID(),
-              userId: u.id,
-              redditId,
-              redditUsername,
-              karma: 0,
-              accountAgeDays: 0,
-              optedSubs: [],
-              status: "pending",
-            });
-            await db
-              .update(users)
-              .set({ role: "poster" })
-              .where(eq(users.id, u.id));
-          }
-        }
-      }
-      return true;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,

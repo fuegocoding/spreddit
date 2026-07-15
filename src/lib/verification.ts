@@ -60,6 +60,11 @@ export async function verifyClaim(claimId: string): Promise<VerificationResult> 
       .update(s.claims)
       .set({ status: "removed", survivalCheckedAt: new Date() })
       .where(eq(s.claims.id, claim.id));
+    // Ban the poster
+    await db
+      .update(s.users)
+      .set({ role: "banned" })
+      .where(eq(s.users.id, claim.posterId));
     return { ok: true, matched: false, titleMatched: false, removed: true };
   }
 

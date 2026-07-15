@@ -20,6 +20,7 @@ import {
   IconArrowRight,
   IconBrandReddit,
   IconPlus,
+  IconWallet,
 } from "@tabler/icons-react";
 import Link from "next/link";
 
@@ -42,13 +43,27 @@ export async function PosterDashboard() {
             Dashboard
           </p>
           <h1 className="font-sans text-4xl font-extrabold tracking-tight">Poster</h1>
+          {session.user.balanceCents > 0 && (
+            <p className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+              <IconWallet className="size-3.5" />
+              Balance: {formatUsd(session.user.balanceCents, { withCents: true })}
+            </p>
+          )}
         </div>
-        <Button asChild className="gap-2">
-          <Link href="/feed">
-            Browse the feed
-            <IconArrowRight className="size-4" />
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button asChild variant="outline" className="gap-2">
+            <Link href="/poster/withdraw">
+              <IconWallet className="size-4" />
+              Withdraw
+            </Link>
+          </Button>
+          <Button asChild className="gap-2">
+            <Link href="/feed">
+              Browse the feed
+              <IconArrowRight className="size-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">

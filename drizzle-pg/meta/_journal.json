@@ -8,6 +8,13 @@
       "when": 1784130157734,
       "tag": "0000_superb_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784144924052,
+      "tag": "0001_colossal_blade",
+      "breakpoints": true
     }
   ]
 }

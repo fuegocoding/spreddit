@@ -47,7 +47,7 @@ export default async function PublicFeed() {
           {session?.user
             ? accounts.length > 0
               ? "Claim a post, publish it on your account, submit proof, get paid."
-              : "Connect your Reddit account to start claiming."
+              : "Connect your Reddit account to start claiming. We verify via a public post URL."
             : "Sign in to claim."}
         </p>
       </div>

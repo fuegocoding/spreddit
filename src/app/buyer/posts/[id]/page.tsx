@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { IconArrowLeft, IconExternalLink, IconShieldCheck, IconShieldX } from "@tabler/icons-react";
 import Link from "next/link";
+import { PayWithStripe } from "./pay-with-stripe";
+import { AppealButton } from "./appeal-button";
 
 const CLAIM_STATUS: Record<string, { variant: "default" | "secondary" | "outline" | "destructive"; label: string }> = {
   active: { variant: "secondary", label: "Claimed" },
@@ -86,6 +88,20 @@ export default async function BuyerPostDetail({
         </CardContent>
       </Card>
 
+      {post.status === "pending_payment" && (
+        <Card className="mb-6 border-primary/30">
+          <CardHeader>
+            <CardTitle className="font-sans">Complete payment</CardTitle>
+            <CardDescription>
+              Pay to publish this post. Once paid, it appears in the poster feed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PayWithStripe postId={post.id} amountCents={post.bountyCents} />
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="font-sans">Claims</CardTitle>
@@ -124,6 +140,7 @@ export default async function BuyerPostDetail({
                         </Button>
                       )}
                       <Badge variant={status.variant}>{status.label}</Badge>
+                      {c.claim.status === "removed" && <AppealButton claimId={c.claim.id} />}
                     </div>
                   </div>
                 );

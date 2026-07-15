@@ -52,7 +52,7 @@ export async function createPostAction(formData: FormData) {
     survivalGuarantee: false,
     subMatchPriority: false,
     sameDayPublish: false,
-    status: "available",
+    status: "pending_payment",
   });
 
   revalidatePath("/buyer");

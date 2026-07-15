@@ -28,7 +28,32 @@ export async function POST(request: Request) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const postId = session.metadata?.postId;
-      if (postId) {
+      const type = session.metadata?.type;
+
+      if (type === "appeal") {
+        const claimId = session.metadata?.claimId;
+        const posterId = session.metadata?.posterId;
+        const buyerId = session.metadata?.buyerId;
+
+        if (claimId && posterId && buyerId) {
+          // Create dispute record
+          await db.insert(schema.disputes).values({
+            id: require("node:crypto").randomUUID(),
+            claimId,
+            raisedBy: "buyer",
+            reason: "buyer_appeal",
+            status: "resolved",
+            resolution: "Buyer paid $0.99 to lift ban",
+            resolvedAt: new Date(),
+          });
+          // Unban the poster
+          await db
+            .update(schema.users)
+            .set({ role: "poster" })
+            .where(eq(schema.users.id, posterId));
+        }
+      } else if (postId) {
+        // Normal post payment
         await db
           .update(schema.posts)
           .set({ status: "available" })

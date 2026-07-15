@@ -22,7 +22,7 @@ export const users = pgTable(
     emailVerified: ts("email_verified"),
     name: text("name"),
     image: text("image"),
-    role: text("role", { enum: ["buyer", "poster", "admin"] })
+    role: text("role", { enum: ["buyer", "poster", "admin", "banned"] })
       .notNull()
       .default("buyer"),
     stripeCustomerId: text("stripe_customer_id"),
@@ -80,6 +80,7 @@ export const redditAccounts = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     redditUsername: text("reddit_username").notNull().unique(),
     redditId: text("reddit_id").notNull().unique(),
+    verificationCode: text("verification_code"),
     karma: integer("karma").notNull().default(0),
     accountAgeDays: integer("account_age_days").notNull().default(0),
     optedSubs: jsonb("opted_subs").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
@@ -241,12 +242,30 @@ export const apiKeys = pgTable(
   (t) => [index("api_keys_user_idx").on(t.userId)]
 );
 
+export const passkeys = pgTable(
+  "passkeys",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    credentialId: text("credential_id").notNull().unique(),
+    publicKey: text("public_key").notNull(),
+    counter: integer("counter").notNull().default(0),
+    backedUp: boolean("backed_up").notNull().default(false),
+    transports: jsonb("transports").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("passkeys_user_idx").on(t.userId), index("passkeys_credential_idx").on(t.credentialId)]
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   redditAccounts: many(redditAccounts),
   posts: many(posts),
   claims: many(claims),
   payouts: many(payouts),
   apiKeys: many(apiKeys),
+  passkeys: many(passkeys),
 }));
 
 export const redditAccountsRelations = relations(redditAccounts, ({ one, many }) => ({
@@ -268,6 +287,10 @@ export const claimsRelations = relations(claims, ({ one }) => ({
   }),
 }));
 
+export const passkeysRelations = relations(passkeys, ({ one }) => ({
+  user: one(users, { fields: [passkeys.userId], references: [users.id] }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type RedditAccount = typeof redditAccounts.$inferSelect;
@@ -282,3 +305,5 @@ export type ApiKey = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
 export type Dispute = typeof disputes.$inferSelect;
 export type NewDispute = typeof disputes.$inferInsert;
+export type Passkey = typeof passkeys.$inferSelect;
+export type NewPasskey = typeof passkeys.$inferInsert;

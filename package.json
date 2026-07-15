@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
+    "@simplewebauthn/browser": "^9.0.1",
+    "@simplewebauthn/server": "^9.0.3",
     "@tabler/icons-react": "^3.44.0",
     "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
