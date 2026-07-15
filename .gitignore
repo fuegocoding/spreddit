@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# build output
+.next/
+out/
+build/
+dist/
+
+# data (sqlite file lives here in dev)
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+
+# editor
+.vscode/
+.idea/
+.DS_Store
