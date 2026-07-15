@@ -1,9 +1,9 @@
 [build]
 builder = "NIXPACKS"
-command = "npm run build"
 
 [deploy]
-startCommand = "npm run start"
+startCommand = "npm start"
+releaseCommand = "npm run db:generate:pg && npm run db:migrate:pg"
 healthcheckPath = "/"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"

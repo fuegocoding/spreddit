@@ -1,6 +1,7 @@
 "use server";
 
-import { db, schema } from "@/db";
+import { db, schema, sqliteSchema } from "@/db";
+const s: typeof sqliteSchema = schema as any;
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -23,25 +24,25 @@ export async function raiseDisputeAction(formData: FormData) {
 
   const [claim] = await db
     .select()
-    .from(schema.claims)
-    .where(eq(schema.claims.id, parsed.claimId))
+    .from(s.claims)
+    .where(eq(s.claims.id, parsed.claimId))
     .limit(1);
   if (!claim) throw new Error("Claim not found");
 
   const isBuyer = await db
     .select()
-    .from(schema.posts)
+    .from(s.posts)
     .where(
       and(
-        eq(schema.posts.id, claim.postId),
-        eq(schema.posts.buyerId, session.user.id)
+        eq(s.posts.id, claim.postId),
+        eq(s.posts.buyerId, session.user.id)
       )
     )
     .limit(1);
   const isPoster = claim.posterId === session.user.id;
   if (!isBuyer.length && !isPoster) throw new Error("Forbidden");
 
-  await db.insert(schema.disputes).values({
+  await db.insert(s.disputes).values({
     id: newId(),
     claimId: parsed.claimId,
     raisedBy: isBuyer.length ? "buyer" : "poster",

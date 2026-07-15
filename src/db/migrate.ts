@@ -2,13 +2,20 @@ import Database from "better-sqlite3";
 import { mkdirSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-const DB_PATH = process.env.DATABASE_URL ?? "./data/spreddit.db";
+const DB_URL = process.env.DATABASE_URL ?? "./data/spreddit.db";
+const isPostgres = DB_URL.startsWith("postgres://") || DB_URL.startsWith("postgresql://");
 
-if (!existsSync(dirname(DB_PATH))) {
-  mkdirSync(dirname(DB_PATH), { recursive: true });
+if (isPostgres) {
+  console.log("This migrator is for SQLite only.");
+  console.log("For Postgres, run `npx drizzle-kit push` against your DATABASE_URL.");
+  process.exit(0);
 }
 
-const db = new Database(DB_PATH);
+if (!existsSync(dirname(DB_URL))) {
+  mkdirSync(dirname(DB_URL), { recursive: true });
+}
+
+const db = new Database(DB_URL);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
@@ -45,7 +52,6 @@ let count = 0;
 for (const file of files) {
   if (applied.has(file)) continue;
   const sql = readFileSync(join(migrationsDir, file), "utf-8");
-  // SQLite migrations from drizzle use --> statement-breakpoint
   const statements = sql
     .split("--> statement-breakpoint")
     .map((s) => s.trim())

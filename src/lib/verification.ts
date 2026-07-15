@@ -1,4 +1,5 @@
-import { db, schema } from "@/db";
+import { db, schema, sqliteSchema } from "@/db";
+const s: typeof sqliteSchema = schema as any;
 import { eq, and, sql, lt } from "drizzle-orm";
 
 export type VerificationResult =
@@ -10,8 +11,8 @@ const FETCH_TIMEOUT_MS = 10_000;
 export async function verifyClaim(claimId: string): Promise<VerificationResult> {
   const [claim] = await db
     .select()
-    .from(schema.claims)
-    .where(eq(schema.claims.id, claimId))
+    .from(s.claims)
+    .where(eq(s.claims.id, claimId))
     .limit(1);
   if (!claim) return { ok: false, error: "Claim not found" };
   if (!claim.redditPostUrl)
@@ -19,8 +20,8 @@ export async function verifyClaim(claimId: string): Promise<VerificationResult> 
 
   const [post] = await db
     .select()
-    .from(schema.posts)
-    .where(eq(schema.posts.id, claim.postId))
+    .from(s.posts)
+    .where(eq(s.posts.id, claim.postId))
     .limit(1);
   if (!post) return { ok: false, error: "Post not found" };
 
@@ -56,9 +57,9 @@ export async function verifyClaim(claimId: string): Promise<VerificationResult> 
 
   if (removed) {
     await db
-      .update(schema.claims)
+      .update(s.claims)
       .set({ status: "removed", survivalCheckedAt: new Date() })
-      .where(eq(schema.claims.id, claim.id));
+      .where(eq(s.claims.id, claim.id));
     return { ok: true, matched: false, titleMatched: false, removed: true };
   }
 
@@ -77,17 +78,17 @@ export async function verifyClaim(claimId: string): Promise<VerificationResult> 
   }
 
   await db
-    .update(schema.claims)
+    .update(s.claims)
     .set({
       status: "verified",
       verifiedAt: new Date(),
     })
-    .where(eq(schema.claims.id, claim.id));
+    .where(eq(s.claims.id, claim.id));
 
   await db
-    .update(schema.posts)
+    .update(s.posts)
     .set({ status: "verified" })
-    .where(eq(schema.posts.id, post.id));
+    .where(eq(s.posts.id, post.id));
 
   return {
     ok: true,
@@ -104,36 +105,36 @@ export async function runSurvivalCheck(claimId: string): Promise<VerificationRes
 
   const [claim] = await db
     .select()
-    .from(schema.claims)
-    .where(eq(schema.claims.id, claimId))
+    .from(s.claims)
+    .where(eq(s.claims.id, claimId))
     .limit(1);
   if (!claim) return { ok: false, error: "Claim missing" };
 
   await db
-    .update(schema.claims)
+    .update(s.claims)
     .set({ status: "survived", survivalCheckedAt: new Date() })
-    .where(eq(schema.claims.id, claim.id));
+    .where(eq(s.claims.id, claim.id));
   await db
-    .update(schema.posts)
+    .update(s.posts)
     .set({ status: "paid" })
-    .where(eq(schema.posts.id, claim.postId));
+    .where(eq(s.posts.id, claim.postId));
   await db
-    .update(schema.users)
+    .update(s.users)
     .set({ balanceCents: sql`balance_cents + ${claim.payoutCents}` })
-    .where(eq(schema.users.id, claim.posterId));
+    .where(eq(s.users.id, claim.posterId));
 
   return result;
 }
 
 export async function runPendingSurvivalChecks(): Promise<number> {
   const due = await db
-    .select({ id: schema.claims.id })
-    .from(schema.claims)
+    .select({ id: s.claims.id })
+    .from(s.claims)
     .where(
       and(
-        eq(schema.claims.status, "verified"),
-        sql`${schema.claims.verifiedAt} IS NOT NULL`,
-        lt(sql`${schema.claims.verifiedAt}`, sql`datetime('now', '-1 minute')`)
+        eq(s.claims.status, "verified"),
+        sql`${s.claims.verifiedAt} IS NOT NULL`,
+        lt(sql`${s.claims.verifiedAt}`, sql`datetime('now', '-1 minute')`)
       )
     )
     .limit(100);
@@ -149,30 +150,30 @@ export async function runExpiredClaims(): Promise<number> {
   const now = new Date();
   const expired = await db
     .select()
-    .from(schema.claims)
+    .from(s.claims)
     .where(
-      and(eq(schema.claims.status, "active"), lt(schema.claims.expiresAt, now))
+      and(eq(s.claims.status, "active"), lt(s.claims.expiresAt, now))
     );
   for (const c of expired) {
     await db
-      .update(schema.claims)
+      .update(s.claims)
       .set({ status: "expired" })
-      .where(eq(schema.claims.id, c.id));
+      .where(eq(s.claims.id, c.id));
     const [others] = await db
       .select()
-      .from(schema.claims)
+      .from(s.claims)
       .where(
         and(
-          eq(schema.claims.postId, c.postId),
-          eq(schema.claims.status, "active")
+          eq(s.claims.postId, c.postId),
+          eq(s.claims.status, "active")
         )
       )
       .limit(1);
     if (!others) {
       await db
-        .update(schema.posts)
+        .update(s.posts)
         .set({ status: "available" })
-        .where(eq(schema.posts.id, c.postId));
+        .where(eq(s.posts.id, c.postId));
     }
   }
   return expired.length;

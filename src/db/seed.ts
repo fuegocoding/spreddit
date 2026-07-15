@@ -1,4 +1,5 @@
-import { db, schema } from "@/db";
+import { db, schema, sqliteSchema } from "@/db";
+const s: typeof sqliteSchema = schema as any;
 import { newId } from "@/lib/ids";
 import { TIER_MULTIPLIER, calculatePosterEarnings } from "@/lib/pricing";
 import { dollarsToCents } from "@/lib/money";
@@ -9,8 +10,8 @@ async function seed() {
 
   const [existing] = await db
     .select()
-    .from(schema.users)
-    .where(eq(schema.users.email, "buyer@spreddit.dev"))
+    .from(s.users)
+    .where(eq(s.users.email, "buyer@spreddit.dev"))
     .limit(1);
   if (existing) {
     console.log("Already seeded. Delete data/spreddit.db to re-seed.");
@@ -21,7 +22,7 @@ async function seed() {
   const posterId = newId();
   const redditId = newId();
 
-  await db.insert(schema.users).values([
+  await db.insert(s.users).values([
     {
       id: buyerId,
       email: "buyer@spreddit.dev",
@@ -40,7 +41,7 @@ async function seed() {
     },
   ]);
 
-  await db.insert(schema.redditAccounts).values({
+  await db.insert(s.redditAccounts).values({
     id: redditId,
     userId: posterId,
     redditUsername: "demo_poster",
@@ -125,7 +126,7 @@ Curious what other agent devs are doing for distribution.`,
   for (const p of samplePosts) {
     const baseCents = dollarsToCents(p.baseBounty);
     const bountyCents = Math.round(baseCents * TIER_MULTIPLIER[p.tier]);
-    await db.insert(schema.posts).values({
+    await db.insert(s.posts).values({
       id: newId(),
       buyerId,
       targetSub: p.targetSub,

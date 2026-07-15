@@ -8,20 +8,28 @@ Spreddit is a payment rail, not a publisher. Buyers submit posts; vetted, karma-
 
 ```bash
 npm install
-npm run db:generate
+npm run db:generate       # SQLite migration
 npm run db:migrate
-npm run db:seed          # creates demo buyer + poster + 3 sample posts
+npm run db:seed           # creates demo buyer + poster + 3 sample posts
 npm run dev
 ```
 
 Open http://localhost:3000.
 
-- Sign in as **buyer@spreddit.dev** to see the buyer dashboard
-- Sign in as **poster@spreddit.dev** to see the poster dashboard and feed
+> The seed creates 3 posts already in `available` state, so the public feed at `/feed` is non-empty out of the box.
 
-The seed creates 3 posts already in `available` state, so the public feed at `/feed` is non-empty out of the box.
+## Production build (Postgres)
 
-> Note: the seed does not create NextAuth sessions. To use the dashboards, sign in by clicking "Continue with Reddit" (will fail without REDDIT_CLIENT_ID) or configure an email magic link in `.env`. Alternatively, you can directly sign in by inserting a session row — see `src/db/seed.ts` for the user IDs.
+```bash
+npm run db:generate:pg    # Postgres migration files
+DATABASE_URL=postgres://... npm run db:migrate:pg
+npm run build
+npm start
+```
+
+## Deploying to Railway
+
+See the dedicated section below.
 
 ## Architecture
 
@@ -33,33 +41,133 @@ The seed creates 3 posts already in `available` state, so the public feed at `/f
 
 ## Database
 
-Drizzle is the single source of truth. Schema lives in `src/db/schema.ts`. After schema changes:
+Drizzle is the single source of truth. Schemas live in:
+- `src/db/schema.sqlite.ts` — for local dev
+- `src/db/schema.postgres.ts` — for production
+
+After schema changes:
 
 ```bash
-npm run db:generate   # writes a new migration to drizzle/
-npm run db:migrate    # applies pending migrations
+npm run db:generate      # SQLite
+npm run db:generate:pg   # Postgres
 ```
 
-## Deploying to Railway
+---
 
-1. Create a new Railway project.
-2. Provision Postgres.
-3. Add `DATABASE_URL` env var with the Postgres URL.
-4. Add a volume mounted at `/app/data` if you want to keep using SQLite locally; otherwise swap the driver in `src/db/index.ts` to `drizzle-orm/postgres-js` for production.
-5. Push this repo. Set the subdomain to `spreddit.fuego.im` via Railway's custom domain settings.
-6. Add the env vars from `.env.example`.
-7. Set up a cron job (Railway Cron, or external) hitting `/api/cron/survival` every minute with `Authorization: Bearer $CRON_SECRET`.
+## Railway deploy — step by step
 
-For production, swap the `better-sqlite3` driver in `src/db/index.ts` for the Postgres driver:
+### 1. Push to GitHub
 
-```ts
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-const client = postgres(process.env.DATABASE_URL!);
-export const db = drizzle(client, { schema });
+```bash
+# Create a new empty repo at https://github.com/new (no README, no .gitignore, no license)
+cd /home/fuego/Documents/Code/spreddit
+git remote add origin git@github.com:YOUR_USER/spreddit.git
+git push -u origin main
 ```
 
-Then re-run migrations.
+### 2. Create a Railway project
+
+1. Go to https://railway.app → **New Project** → **Deploy from GitHub repo** → select `spreddit`.
+2. Railway auto-detects Next.js via `nixpacks.toml`.
+
+### 3. Add a Postgres database
+
+In the project canvas, click **+ New** → **Database** → **PostgreSQL**. Railway provisions a Postgres instance and exposes `DATABASE_URL` automatically to the linked service.
+
+### 4. Wire up the env vars
+
+Click on the **Spreddit** service (not the database) → **Variables**. Add:
+
+| Variable | Value | Notes |
+|---|---|---|
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` | Reference the Postgres service. |
+| `NEXTAUTH_SECRET` | (32+ char random) | `openssl rand -hex 32` |
+| `NEXTAUTH_URL` | `https://spreddit.fuego.im` | The production URL. |
+| `NEXT_PUBLIC_APP_URL` | `https://spreddit.fuego.im` | Same. |
+| `CRON_SECRET` | (random) | For `/api/cron/survival`. |
+| `REDDIT_CLIENT_ID` | (from Reddit app) | Optional. Required for poster sign-in. |
+| `REDDIT_CLIENT_SECRET` | (from Reddit app) | Optional. |
+| `EMAIL_SERVER_HOST` | (SMTP host) | Optional. Required for buyer email sign-in. |
+| `EMAIL_SERVER_PORT` | `587` | |
+| `EMAIL_SERVER_USER` | | |
+| `EMAIL_SERVER_PASS` | | |
+| `EMAIL_FROM` | | |
+| `STRIPE_SECRET_KEY` | (sk_live_...) | Optional. Required for paid mode. |
+| `STRIPE_WEBHOOK_SECRET` | (whsec_...) | Optional. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | (pk_live_...) | Optional. |
+
+> Without `REDDIT_CLIENT_ID`, the Reddit sign-in button won't work. Without email vars, magic-link sign-in won't work. **Both off in v1.0.0-beta is fine** — the platform will still run, you just can't sign in via the UI. The REST API + API keys work without either.
+
+To set a service to use Postgres's `DATABASE_URL`, the easiest path is:
+- Click the Spreddit service → Variables → **New Variable** → **Reference Variable** → pick `Postgres.DATABASE_URL`.
+
+### 5. Set the custom domain
+
+1. Click the Spreddit service → **Settings** → **Networking** → **Custom Domain** → `spreddit.fuego.im`.
+2. Add the CNAME Railway shows you to your DNS provider (Cloudflare in your case):
+   - Type: `CNAME`
+   - Name: `spreddit`
+   - Target: `<your-app>.up.railway.app`
+3. Wait for the SSL cert to provision (1–5 minutes).
+
+### 6. Deploy
+
+Push to main; Railway auto-builds. First build takes ~3–5 min (compiles native deps for `better-sqlite3` which we no longer need on Postgres, but `nixpacks.toml` already installs build tools).
+
+### 7. Run migrations
+
+The `releaseCommand` in `railway.toml` runs:
+
+```bash
+npm run db:generate:pg && npm run db:migrate:pg
+```
+
+This generates the Postgres migration files from the schema and applies them. **If you change the schema, push to main; Railway will re-run the release command on the next deploy.**
+
+### 8. Set up the cron
+
+The verification engine needs a 1-minute cron hitting `/api/cron/survival`.
+
+**Option A — Railway Cron (paid plans):**
+- New service in the same project → **Cron** → schedule `* * * * *` → command: empty (uses the service's `startCommand`).
+- Change its start command to: `curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://spreddit.fuego.im/api/cron/survival`
+
+**Option B — free external cron (cron-job.org):**
+1. Sign up at https://cron-job.org
+2. Create a job, every 1 minute
+3. URL: `https://spreddit.fuego.im/api/cron/survival`
+4. Header: `Authorization: Bearer $CRON_SECRET` (use the value from step 4)
+
+### 9. Verify
+
+- `https://spreddit.fuego.im/` → landing renders
+- `https://spreddit.fuego.im/feed` → empty feed (or you can seed by hand)
+- `https://spreddit.fuego.im/api/v1/subs` → returns JSON
+- `https://spreddit.fuego.im/api/cron/survival` (with auth) → returns `{ ok: true, ... }`
+
+### 10. (Optional) Seed data
+
+If you want to seed production with the demo posts so the public feed isn't empty, do this once via the Railway shell:
+
+```bash
+railway run npm run db:seed
+```
+
+The seed is idempotent — it won't duplicate. To re-seed, drop the tables first (in the Railway Postgres shell):
+
+```sql
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+```
+
+Then re-deploy (or run `npm run db:migrate:pg` and `npm run db:seed`).
+
+### 11. (Optional) Custom error / status
+
+1. **Status page** — point `statuspage.fuego.im` at a free BetterUptime monitor with a 1-min check on `/api/health`.
+2. **Backups** — Railway Postgres has automatic daily backups on paid plans. For free, schedule a `pg_dump` weekly to a Railway Volume or S3.
+
+---
 
 ## MCP package
 
@@ -76,42 +184,34 @@ Then users can install with:
 npx spreddit-mcp add --agent claude-code
 ```
 
+The installer writes credentials to `~/.config/spreddit/credentials.json` and the MCP server config to the agent's expected location.
+
 ## Project structure
 
 ```
 src/
   app/
     page.tsx              # Landing page
-    login/                # Sign in (Reddit + email)
-    feed/                 # Public feed of available posts
-    buyer/                # Buyer dashboard (post mgmt, API keys)
-    poster/               # Poster dashboard (claims, account mgmt)
+    login/                # Sign in
+    feed/                 # Public feed
+    buyer/                # Buyer dashboard
+    poster/               # Poster dashboard
     docs/                 # API + MCP docs
     api/
-      auth/[...nextauth]  # NextAuth route
-      v1/                 # REST API (Bearer auth via API keys)
-      verify/[id]         # Manual verification trigger
-      cron/survival       # Cron for 24h survival check
-      stripe/             # Stripe checkout, connect, webhook
+      auth/[...nextauth]  # NextAuth
+      v1/                 # REST API
+      verify/[id]         # Manual verify
+      cron/survival       # Cron endpoint
+      stripe/             # Stripe
   db/
-    schema.ts             # Drizzle schema
-    index.ts              # DB client
-    migrate.ts            # Custom migrator (better-sqlite3)
+    schema.sqlite.ts      # Drizzle SQLite schema
+    schema.postgres.ts    # Drizzle Postgres schema
+    index.ts              # DB client (driver-aware)
+    migrate.ts            # SQLite migrator
+    migrate-pg.ts         # Postgres migrator
     seed.ts               # Demo seed
-  lib/
-    auth.ts               # NextAuth config
-    queries.ts            # Read helpers
-    pricing.ts            # Tier multipliers, fees
-    money.ts              # USD formatting
-    subs.ts               # Monetizable sub list
-    verification.ts       # Auto-verify + survival check
-    stripe.ts             # Stripe client
-    ids.ts                # ID + API key generation
-    env.ts                # Zod-validated env
-  components/
-    ui/                   # shadcn/ui components
-    site-header.tsx       # Top nav
-    reddit-mark.tsx       # Brand mark
+  lib/                    # Auth, queries, verification, pricing, etc.
+  components/             # shadcn/ui + custom
 packages/
   spreddit-mcp/           # MCP server npm package
 PRD.md                    # Product requirements doc
