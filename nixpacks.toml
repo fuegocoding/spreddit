@@ -1,5 +1,6 @@
 [phases.setup]
 aptPkgs = ["python3", "build-essential"]
+nixPkgs = ["nodejs_22"]
 
 [phases.install]
 cmds = ["npm ci --include=dev"]
