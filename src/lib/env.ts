@@ -16,6 +16,16 @@ const schema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_PLATFORM_FEE_BPS: z.coerce.number().default(2000),
+  // When true (default in dev if Stripe is unconfigured), buyers can top up
+  // their balance without a real charge and posts go straight to the feed.
+  // Production should set this to false and configure Stripe.
+  DEMO_MODE: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
+  CRON_SECRET: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
+
+export const isDemoMode = env.DEMO_MODE || !env.STRIPE_SECRET_KEY;

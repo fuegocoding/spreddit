@@ -17,6 +17,7 @@ import {
   IconTerminal,
   IconArrowRight,
   IconBolt,
+  IconWallet,
 } from "@tabler/icons-react";
 import { InstallCommand } from "@/components/install-command";
 import { CopyButton } from "@/components/copy-button";
@@ -77,6 +78,7 @@ function Tiers() {
           </h2>
           <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
             Pay only when a post is verified. Price depends on account quality.
+            Top up your wallet, then create posts that deduct from it.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -89,9 +91,9 @@ function Tiers() {
                     <div>
                       <h3 className="font-sans text-xl font-bold">{TIER_LABEL[t]}</h3>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {t === "random" && "1k+ karma · 6mo+ account"}
-                        {t === "high_karma" && "10k+ karma · 1yr+ account"}
-                        {t === "dedicated" && "50k+ karma · 2yr+ account"}
+                        {t === "random" && "1k+ karma / 6mo+ account"}
+                        {t === "high_karma" && "10k+ karma / 1yr+ account"}
+                        {t === "dedicated" && "50k+ karma / 2yr+ account"}
                       </p>
                     </div>
                     {featured && (
@@ -102,7 +104,7 @@ function Tiers() {
                     {formatUsd(TIER_PRICE_CENTS[t], { withCents: true })}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    per published post · poster earns {formatUsd(TIER_PRICE_CENTS[t] - Math.round(TIER_PRICE_CENTS[t] * 0.2), { withCents: true })}
+                    per published post, poster earns {formatUsd(TIER_PRICE_CENTS[t] - Math.round(TIER_PRICE_CENTS[t] * 0.2), { withCents: true })}
                   </div>
                   <Separator />
                   <p className="text-sm text-muted-foreground">
@@ -140,7 +142,7 @@ function How() {
             icon={<IconRobot className="size-8 text-primary" />}
             step="01"
             title="Submit a post"
-            body="Paste a title, body, and target subreddit. Pick a tier. Pay into escrow."
+            body="Paste a title, body, and any subreddit. Pick a tier. Funds deduct from your wallet."
           />
           <Step
             icon={<IconUsers className="size-8 text-primary" />}
@@ -201,7 +203,8 @@ function ForAgents() {
           </h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
             Native MCP integration for Claude Code, OpenCode, Hermes, OpenClaw,
-            and Codex CLI. Your agent can run a full campaign loop unattended.
+            Codex, Cursor, Windsurf, and any other MCP-supporting agent. Your
+            agent can run a full campaign loop unattended.
           </p>
           <div className="mt-6 rounded-lg border border-border bg-background p-4 font-mono text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -215,29 +218,30 @@ function ForAgents() {
               <CopyButton text="npx spreddit-mcp add" />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Works with: Claude Code, OpenCode, Hermes, OpenClaw, Codex
+              Works with any agent that reads a JSON MCP config. Pass --config
+              to point at a custom path.
             </p>
           </div>
           <ul className="mt-6 space-y-2 text-sm">
             <li className="flex items-start gap-2">
               <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
               <code className="text-xs">spreddit_create_post</code>
-              <span className="text-muted-foreground">— submit a post</span>
+              <span className="text-muted-foreground">- submit a post</span>
             </li>
             <li className="flex items-start gap-2">
               <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
               <code className="text-xs">spreddit_check_status</code>
-              <span className="text-muted-foreground">— wait for publish</span>
+              <span className="text-muted-foreground">- wait for publish</span>
             </li>
             <li className="flex items-start gap-2">
               <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
               <code className="text-xs">spreddit_list_subs</code>
-              <span className="text-muted-foreground">— discover monetizable subs</span>
+              <span className="text-muted-foreground">- discover subs</span>
             </li>
             <li className="flex items-start gap-2">
               <IconCheck className="mt-0.5 size-4 text-primary shrink-0" />
               <code className="text-xs">spreddit_account_balance</code>
-              <span className="text-muted-foreground">— track spend</span>
+              <span className="text-muted-foreground">- check wallet balance</span>
             </li>
           </ul>
         </div>
@@ -283,7 +287,7 @@ function Trust() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-2">
                 <IconShieldX className="size-5 text-destructive" />
-                <h3 className="font-sans font-bold">We don&apos;t post on your behalf</h3>
+                <h3 className="font-sans font-bold">We do not post on your behalf</h3>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 No automation. No API calls. No scraping. Every post is published
@@ -295,11 +299,11 @@ function Trust() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-2">
                 <IconShieldX className="size-5 text-destructive" />
-                <h3 className="font-sans font-bold">We don&apos;t control what posters publish</h3>
+                <h3 className="font-sans font-bold">We do not control what posters publish</h3>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Posters choose which posts to claim. We&apos;re a marketplace and a
-                payment rail. We&apos;re not a publisher.
+                Posters choose which posts to claim. We are a marketplace and a
+                payment rail. We are not a publisher.
               </p>
             </CardContent>
           </Card>
@@ -320,11 +324,11 @@ function Trust() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-2">
                 <IconShieldCheck className="size-5 text-primary" />
-                <h3 className="font-sans font-bold">We hold funds in escrow</h3>
+                <h3 className="font-sans font-bold">We hold funds in your wallet</h3>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Funds are held by Stripe until the post is verified and survives
-                24h. No verified post, no payout.
+                Top up your wallet with Stripe. Funds are deducted when a post
+                enters the feed. No verified post, no payout to the poster.
               </p>
             </CardContent>
           </Card>

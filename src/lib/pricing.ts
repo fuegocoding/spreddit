@@ -18,6 +18,12 @@ export const TIER_PRICE_CENTS: Record<keyof typeof TIER_LABEL, number> = {
 
 export const PLATFORM_FEE_BPS = 2000;
 
+export const BOOST_PRICE_CENTS = {
+  survival_guarantee: 500,
+  sub_match_priority: 200,
+  same_day_publish: 300,
+} as const;
+
 export function calculatePlatformFee(amountCents: number): number {
   return Math.round((amountCents * PLATFORM_FEE_BPS) / 10000);
 }
@@ -28,4 +34,29 @@ export function calculatePosterEarnings(amountCents: number): number {
 
 export function getTierPrice(tier: keyof typeof TIER_LABEL): number {
   return TIER_PRICE_CENTS[tier];
+}
+
+export function calculateBoostsTotal(opts: {
+  survivalGuarantee?: boolean;
+  subMatchPriority?: boolean;
+  sameDayPublish?: boolean;
+}): number {
+  let total = 0;
+  if (opts.survivalGuarantee) total += BOOST_PRICE_CENTS.survival_guarantee;
+  if (opts.subMatchPriority) total += BOOST_PRICE_CENTS.sub_match_priority;
+  if (opts.sameDayPublish) total += BOOST_PRICE_CENTS.same_day_publish;
+  return total;
+}
+
+export function calculateTotalCharge(
+  tier: keyof typeof TIER_LABEL,
+  opts: {
+    survivalGuarantee?: boolean;
+    subMatchPriority?: boolean;
+    sameDayPublish?: boolean;
+  } = {}
+): { base: number; boosts: number; total: number } {
+  const base = TIER_PRICE_CENTS[tier];
+  const boosts = calculateBoostsTotal(opts);
+  return { base, boosts, total: base + boosts };
 }

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, schema } from "@/db";
-import { eq } from "drizzle-orm";
-import { assertStripe } from "@/lib/stripe";
+import { db, schema, sqliteSchema } from "@/db";
+const s: typeof sqliteSchema = schema as any;
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { newId } from "@/lib/ids";
 
 const APPEAL_FEE_CENTS = 99;
 
@@ -23,53 +24,60 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid input" }, { status: 400 });
   }
 
-  // Find the claim
   const [claim] = await db
     .select()
-    .from(schema.claims)
-    .where(eq(schema.claims.id, parsed.data.claimId))
+    .from(s.claims)
+    .where(eq(s.claims.id, parsed.data.claimId))
     .limit(1);
   if (!claim) {
     return NextResponse.json({ error: "claim not found" }, { status: 404 });
   }
 
-  // Verify the buyer owns the post this claim is for
   const [post] = await db
     .select()
-    .from(schema.posts)
-    .where(eq(schema.posts.id, claim.postId))
+    .from(s.posts)
+    .where(eq(s.posts.id, claim.postId))
     .limit(1);
   if (!post || post.buyerId !== session.user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const s = assertStripe();
-
-  // Create a checkout session for $0.99
-  const checkoutSession = await s.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
+  const [user] = await db
+    .select()
+    .from(s.users)
+    .where(eq(s.users.id, session.user.id))
+    .limit(1);
+  if (!user) {
+    return NextResponse.json({ error: "user not found" }, { status: 404 });
+  }
+  if ((user.balanceCents ?? 0) < APPEAL_FEE_CENTS) {
+    return NextResponse.json(
       {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "Appeal poster ban",
-            description: "Lift the ban on the poster who removed their post.",
-          },
-          unit_amount: APPEAL_FEE_CENTS,
-        },
-        quantity: 1,
+        error: "insufficient_balance",
+        requiredCents: APPEAL_FEE_CENTS,
+        balanceCents: user.balanceCents ?? 0,
       },
-    ],
-    metadata: {
-      type: "appeal",
-      claimId: claim.id,
-      posterId: claim.posterId,
-      buyerId: session.user.id,
-    },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/buyer/posts/${post.id}?appealed=1`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/buyer/posts/${post.id}`,
-  });
+      { status: 402 }
+    );
+  }
 
-  return NextResponse.json({ url: checkoutSession.url });
+  await db
+    .update(s.users)
+    .set({ balanceCents: sql`balance_cents - ${APPEAL_FEE_CENTS}` })
+    .where(eq(s.users.id, user.id));
+  await db.insert(s.disputes).values({
+    id: newId(),
+    claimId: claim.id,
+    raisedBy: "buyer",
+    reason: "buyer_appeal",
+    status: "resolved",
+    resolution: `Buyer paid $${(APPEAL_FEE_CENTS / 100).toFixed(2)} to lift ban`,
+    resolvedAt: new Date(),
+  });
+  await db
+    .update(s.users)
+    .set({ role: "poster" })
+    .where(eq(s.users.id, claim.posterId));
+
+  return NextResponse.json({ ok: true, chargedCents: APPEAL_FEE_CENTS });
 }

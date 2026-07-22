@@ -147,7 +147,7 @@ export async function submitVerificationAction(formData: FormData) {
     );
     if (profileRes.ok) {
       const profileHtml = await profileRes.text();
-      // Try to extract karma — Reddit shows it in the sidebar
+      // Try to extract karma. Reddit shows it in the sidebar.
       const karmaMatch = profileHtml.match(/(\d{1,6}(?:,\d{3})*)\s*(?:karma|post karma|comment karma)/i);
       if (karmaMatch) {
         karma = parseInt(karmaMatch[1].replace(/,/g, ""), 10);
@@ -159,7 +159,7 @@ export async function submitVerificationAction(formData: FormData) {
       }
     }
   } catch {
-    // Silently fail — karma stays 0, user can only claim Standard tier
+    // Silently fail. Karma stays 0, user can only claim Standard tier.
   }
 
   await db
@@ -173,10 +173,10 @@ export async function submitVerificationAction(formData: FormData) {
     })
     .where(eq(schema.redditAccounts.id, account.id));
 
-  // Ensure user is marked as poster
+  // Ensure user is marked as poster (and buyer too, so they can do both)
   await db
     .update(schema.users)
-    .set({ role: "poster" })
+    .set({ role: "poster", isPoster: true, isBuyer: true })
     .where(eq(schema.users.id, session.user.id));
 
   revalidatePath("/poster");

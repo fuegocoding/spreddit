@@ -1,5 +1,6 @@
-import { db, schema } from "@/db";
-import { eq, desc, and } from "drizzle-orm";
+import { db, schema, sqliteSchema } from "@/db";
+const s: typeof sqliteSchema = schema as any;
+import { eq, desc, and, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import {
   Card,
@@ -7,32 +8,86 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TIER_LABEL, TIER_PRICE_CENTS } from "@/lib/pricing";
+import { TIER_LABEL } from "@/lib/pricing";
 import { formatUsd } from "@/lib/money";
-import { IconCoin, IconClock, IconBrandReddit, IconLogin } from "@tabler/icons-react";
+import { IconCoin, IconClock, IconLogin } from "@tabler/icons-react";
 import Link from "next/link";
 import { ClaimButton } from "./claim-button";
 
-export default async function PublicFeed() {
-  const session = await auth();
-  const posts = await db
-    .select()
-    .from(schema.posts)
-    .where(eq(schema.posts.status, "available"))
-    .orderBy(desc(schema.posts.createdAt))
-    .limit(50);
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-  const accounts = session?.user
-    ? await db
-        .select()
-        .from(schema.redditAccounts)
+export default async function PublicFeed() {
+  const session = await auth().catch(() => null);
+
+  // Defensive: a single bad row should not 500 the page. We project to plain
+  // shapes and default null fields so the UI can render anything.
+  let posts: Array<{
+    id: string;
+    targetSub: string;
+    title: string;
+    body: string;
+    bountyCents: number;
+    tier: "random" | "high_karma" | "dedicated";
+    createdAt: Date;
+  }> = [];
+
+  try {
+    const rows = (await db
+      .select({
+        id: s.posts.id,
+        targetSub: s.posts.targetSub,
+        title: s.posts.title,
+        body: s.posts.body,
+        bountyCents: s.posts.bountyCents,
+        tier: s.posts.tier,
+        createdAt: s.posts.createdAt,
+      })
+      .from(s.posts)
+      .where(eq(s.posts.status, "available"))
+      .orderBy(desc(s.posts.createdAt))
+      .limit(50)) as any[];
+
+    posts = rows
+      .filter((p) => p && p.id && p.title)
+      .map((p) => ({
+        id: String(p.id),
+        targetSub: String(p.targetSub ?? "unknown"),
+        title: String(p.title ?? ""),
+        body: String(p.body ?? ""),
+        bountyCents: Number(p.bountyCents ?? 0),
+        tier: (p.tier as any) ?? "random",
+        createdAt: p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt ?? Date.now()),
+      }));
+  } catch (e) {
+    // If the DB query itself fails (e.g. cold start), show empty feed rather
+    // than 500ing the page.
+    console.error("feed: failed to load posts", e);
+    posts = [];
+  }
+
+  let accounts: Array<{ id: string; redditUsername: string; karma: number; status: string }> = [];
+  if (session?.user) {
+    try {
+      const rows = (await db
+        .select({
+          id: s.redditAccounts.id,
+          redditUsername: s.redditAccounts.redditUsername,
+          karma: s.redditAccounts.karma,
+          status: s.redditAccounts.status,
+        })
+        .from(s.redditAccounts)
         .where(
           and(
-            eq(schema.redditAccounts.userId, session.user.id),
-            eq(schema.redditAccounts.status, "active")
+            eq(s.redditAccounts.userId, session.user.id),
+            eq(s.redditAccounts.status, "active")
           )
-        )
-      : [];
+        )) as any[];
+      accounts = rows;
+    } catch (e) {
+      console.error("feed: failed to load reddit accounts", e);
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-6 md:px-16 py-16">
@@ -62,18 +117,18 @@ export default async function PublicFeed() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {posts.map((p) => {
             const accountOk =
-              session?.user && session.user.role === "poster" && accounts.length > 0;
+              session?.user && session.user.isPoster && accounts.length > 0;
             return (
               <Card key={p.id} className="flex flex-col h-full transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1">
                 <CardContent className="p-5 flex flex-col gap-3 flex-1">
                   <div className="flex items-center justify-between">
                     <Badge variant="outline">r/{p.targetSub}</Badge>
-                    <Badge variant="secondary">{TIER_LABEL[p.tier]}</Badge>
+                    <Badge variant="secondary">{TIER_LABEL[p.tier] ?? p.tier}</Badge>
                   </div>
                   <h3 className="font-sans font-bold line-clamp-2">{p.title}</h3>
                   <p className="text-sm text-muted-foreground line-clamp-3 flex-1">
                     {p.body.slice(0, 160)}
-                    {p.body.length > 160 ? "…" : ""}
+                    {p.body.length > 160 ? "..." : ""}
                   </p>
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <div className="flex items-center gap-1 text-primary font-sans font-bold">
@@ -82,7 +137,7 @@ export default async function PublicFeed() {
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <IconClock className="size-3" />
-                      {new Date(p.createdAt).toLocaleDateString()}
+                      {p.createdAt.toLocaleDateString()}
                     </div>
                   </div>
                   {accountOk ? (

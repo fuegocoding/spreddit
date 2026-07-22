@@ -78,21 +78,19 @@ async function claimPost({
   const payoutCents = calculatePosterEarnings(post.bountyCents);
 
   const claimId = newId();
-  await db.transaction(async (tx) => {
-    await tx.insert(schema.claims).values({
-      id: claimId,
-      postId: post.id,
-      posterId: userId,
-      redditAccountId: account.id,
-      status: "active",
-      expiresAt,
-      payoutCents,
-    });
-    await tx
-      .update(schema.posts)
-      .set({ status: "claimed" })
-      .where(eq(schema.posts.id, post.id));
+  await db.insert(schema.claims).values({
+    id: claimId,
+    postId: post.id,
+    posterId: userId,
+    redditAccountId: account.id,
+    status: "active",
+    expiresAt,
+    payoutCents,
   });
+  await db
+    .update(schema.posts)
+    .set({ status: "claimed" })
+    .where(eq(schema.posts.id, post.id));
 
   revalidatePath("/feed");
   revalidatePath("/poster");
@@ -128,6 +126,28 @@ export async function submitProofAction(formData: FormData) {
     .limit(1);
   if (!claim) {
     throw new Error("Claim not found or already submitted.");
+  }
+
+  // Handle screenshot file upload (optional). Stored as base64 in proof_uploads.
+  const screenshot = formData.get("screenshot");
+  if (screenshot && screenshot instanceof File && screenshot.size > 0) {
+    if (screenshot.size > 5 * 1024 * 1024) {
+      throw new Error("Screenshot must be under 5MB");
+    }
+    const mimeType = screenshot.type || "image/png";
+    if (!mimeType.startsWith("image/")) {
+      throw new Error("Screenshot must be an image file");
+    }
+    const arrayBuffer = await screenshot.arrayBuffer();
+    const data = Buffer.from(arrayBuffer).toString("base64");
+    await db.insert(schema.proofUploads).values({
+      id: newId(),
+      claimId: claim.id,
+      filename: screenshot.name || "screenshot.png",
+      mimeType,
+      sizeBytes: screenshot.size,
+      data,
+    });
   }
 
   await db

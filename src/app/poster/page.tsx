@@ -27,7 +27,7 @@ import Link from "next/link";
 export async function PosterDashboard() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role !== "poster") redirect("/buyer");
+  if (!session.user.isPoster) redirect("/poster/connect");
 
   const [stats, claims, accounts] = await Promise.all([
     getPosterStats(session.user.id),

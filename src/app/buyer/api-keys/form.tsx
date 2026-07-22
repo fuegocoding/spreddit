@@ -21,7 +21,7 @@ export function ApiKeyForm({
       try {
         const { key } = await action(formData);
         setCreated(key);
-        toast.success("API key created. Copy it now — you won't see it again.");
+        toast.success("API key created. Copy it now - you won't see it again.");
       } catch (e: any) {
         toast.error(e.message ?? "Failed to create key");
       }

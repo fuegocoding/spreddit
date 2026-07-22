@@ -1,24 +1,165 @@
-export const MONETIZABLE_SUBS: Record<
-  string,
-  { description: string; minKarma: number; baseRate: number }
-> = {
+// Subreddit discovery. We do not gate the marketplace on a curated list.
+// Posters are the experts on their own subs. Buyers can target any valid
+// subreddit name. This list is a discovery aid, surfaced in the docs and
+// in the API. The platform happily accepts any sub name that passes the
+// `isValidSubredditName` regex below.
+
+export type SubSuggestion = {
+  description: string;
+  minKarma: number;
+  baseRate: number;
+};
+
+export const SUGGESTED_SUBS: Record<string, SubSuggestion> = {
   SaaS: { description: "Software as a Service launches", minKarma: 1000, baseRate: 25 },
   startups: { description: "Startup launches and news", minKarma: 1000, baseRate: 30 },
   sideproject: { description: "Side project showcases", minKarma: 500, baseRate: 20 },
   ChatGPT: { description: "AI chatbot discussion", minKarma: 1000, baseRate: 15 },
   AI_Agents: { description: "AI agent discussion", minKarma: 1000, baseRate: 20 },
   artificial: { description: "General AI discussion", minKarma: 1000, baseRate: 15 },
+  LocalLLaMA: { description: "Local and open-source LLMs", minKarma: 1000, baseRate: 20 },
+  ClaudeAI: { description: "Anthropic Claude and AI assistants", minKarma: 1000, baseRate: 20 },
+  OpenAI: { description: "OpenAI products and APIs", minKarma: 1000, baseRate: 20 },
   cryptocurrency: { description: "Crypto news and discussion", minKarma: 2000, baseRate: 20 },
+  Bitcoin: { description: "Bitcoin discussion", minKarma: 2000, baseRate: 20 },
+  ethereum: { description: "Ethereum and smart contracts", minKarma: 2000, baseRate: 20 },
+  solana: { description: "Solana ecosystem", minKarma: 2000, baseRate: 25 },
   personalfinance: { description: "Personal finance advice", minKarma: 2000, baseRate: 25 },
   Entrepreneur: { description: "Entrepreneurship and business", minKarma: 1500, baseRate: 25 },
   IndieHackers: { description: "Indie hacker community", minKarma: 1000, baseRate: 25 },
+  smallbusiness: { description: "Small business discussion", minKarma: 1000, baseRate: 20 },
+  marketing: { description: "Marketing and growth", minKarma: 1000, baseRate: 20 },
+  copywriting: { description: "Copywriting and persuasion", minKarma: 1000, baseRate: 20 },
+  ecommerce: { description: "E-commerce and DTC", minKarma: 1000, baseRate: 20 },
+  programming: { description: "Programming and software engineering", minKarma: 1000, baseRate: 20 },
+  webdev: { description: "Web development", minKarma: 1000, baseRate: 20 },
+  javascript: { description: "JavaScript language and ecosystem", minKarma: 1000, baseRate: 20 },
+  typescript: { description: "TypeScript language and ecosystem", minKarma: 1000, baseRate: 20 },
+  Python: { description: "Python language and ecosystem", minKarma: 1000, baseRate: 20 },
+  rust: { description: "Rust language", minKarma: 1000, baseRate: 20 },
+  golang: { description: "Go language", minKarma: 1000, baseRate: 20 },
+  csharp: { description: "C# language", minKarma: 1000, baseRate: 20 },
+  java: { description: "Java language", minKarma: 1000, baseRate: 20 },
+  cpp: { description: "C++ language", minKarma: 1000, baseRate: 20 },
+  swift: { description: "Swift and iOS development", minKarma: 1000, baseRate: 20 },
+  kotlin: { description: "Kotlin language", minKarma: 1000, baseRate: 20 },
+  reactjs: { description: "React framework", minKarma: 1000, baseRate: 20 },
+  nextjs: { description: "Next.js framework", minKarma: 1000, baseRate: 20 },
+  vuejs: { description: "Vue framework", minKarma: 1000, baseRate: 20 },
+  svelte: { description: "Svelte framework", minKarma: 1000, baseRate: 20 },
+  node: { description: "Node.js runtime", minKarma: 1000, baseRate: 20 },
+  MachineLearning: { description: "Machine learning research and apps", minKarma: 2000, baseRate: 25 },
+  deeplearning: { description: "Deep learning discussion", minKarma: 2000, baseRate: 25 },
+  datascience: { description: "Data science", minKarma: 2000, baseRate: 20 },
+  kubernetes: { description: "Kubernetes and orchestration", minKarma: 1000, baseRate: 20 },
+  docker: { description: "Docker and containers", minKarma: 1000, baseRate: 20 },
+  devops: { description: "DevOps practices", minKarma: 1000, baseRate: 20 },
+  aws: { description: "Amazon Web Services", minKarma: 1000, baseRate: 20 },
+  googlecloud: { description: "Google Cloud Platform", minKarma: 1000, baseRate: 20 },
+  azure: { description: "Microsoft Azure", minKarma: 1000, baseRate: 20 },
+  sysadmin: { description: "System administration", minKarma: 1000, baseRate: 20 },
+  linux: { description: "Linux and open source", minKarma: 1000, baseRate: 15 },
+  macos: { description: "macOS discussion", minKarma: 1000, baseRate: 15 },
+  windows: { description: "Windows discussion", minKarma: 1000, baseRate: 15 },
+  apple: { description: "Apple products and ecosystem", minKarma: 1000, baseRate: 15 },
+  android: { description: "Android and Google ecosystem", minKarma: 1000, baseRate: 15 },
+  technology: { description: "General technology", minKarma: 1000, baseRate: 15 },
+  privacy: { description: "Privacy and security", minKarma: 1000, baseRate: 15 },
+  netsec: { description: "Network security", minKarma: 1000, baseRate: 20 },
+  cybersecurity: { description: "Cybersecurity careers and news", minKarma: 1000, baseRate: 20 },
+  productivity: { description: "Productivity tools and systems", minKarma: 1000, baseRate: 15 },
+  selfimprovement: { description: "Personal growth and habits", minKarma: 1000, baseRate: 15 },
+  lifehacks: { description: "Tips and tricks", minKarma: 1000, baseRate: 15 },
+  getdisciplined: { description: "Get disciplined", minKarma: 1000, baseRate: 15 },
+  DecidingToBeBetter: { description: "Deciding to be better", minKarma: 1000, baseRate: 15 },
+  fitness: { description: "Fitness and training", minKarma: 1000, baseRate: 15 },
+  bodyweightfitness: { description: "Bodyweight training", minKarma: 1000, baseRate: 15 },
+  yoga: { description: "Yoga and mindfulness", minKarma: 500, baseRate: 10 },
+  meditation: { description: "Meditation and mindfulness", minKarma: 500, baseRate: 10 },
+  running: { description: "Running and cardio", minKarma: 1000, baseRate: 15 },
+  cycling: { description: "Cycling and bikes", minKarma: 500, baseRate: 10 },
+  investing: { description: "Investing and markets", minKarma: 2000, baseRate: 25 },
+  stocks: { description: "Stock market discussion", minKarma: 2000, baseRate: 25 },
+  wallstreetbets: { description: "WallStreetBets trading", minKarma: 2000, baseRate: 25 },
+  options: { description: "Options trading", minKarma: 2000, baseRate: 25 },
+  financialindependence: { description: "Financial independence journey", minKarma: 2000, baseRate: 25 },
+  Bogleheads: { description: "Boglehead investing", minKarma: 2000, baseRate: 25 },
+  gaming: { description: "Gaming discussion", minKarma: 1000, baseRate: 15 },
+  pcgaming: { description: "PC gaming", minKarma: 1000, baseRate: 15 },
+  pcmasterrace: { description: "PC gaming and building", minKarma: 1000, baseRate: 15 },
+  PS5: { description: "PlayStation 5 discussion", minKarma: 500, baseRate: 10 },
+  xbox: { description: "Xbox general", minKarma: 500, baseRate: 10 },
+  switch: { description: "Nintendo Switch discussion", minKarma: 500, baseRate: 10 },
+  steam: { description: "Steam discussion", minKarma: 1000, baseRate: 15 },
+  boardgames: { description: "Board games and tabletop", minKarma: 1000, baseRate: 15 },
+  movies: { description: "Movies and cinema", minKarma: 1000, baseRate: 15 },
+  television: { description: "TV shows and streaming", minKarma: 1000, baseRate: 15 },
+  Netflix: { description: "Netflix discussion", minKarma: 1000, baseRate: 15 },
+  anime: { description: "Anime discussion", minKarma: 1000, baseRate: 15 },
+  books: { description: "Books and reading", minKarma: 1000, baseRate: 15 },
+  music: { description: "Music discussion", minKarma: 1000, baseRate: 15 },
+  food: { description: "Food and cooking", minKarma: 1000, baseRate: 15 },
+  Cooking: { description: "Cooking and recipes", minKarma: 1000, baseRate: 15 },
+  baking: { description: "Baking and pastries", minKarma: 1000, baseRate: 15 },
+  Coffee: { description: "Coffee discussion", minKarma: 500, baseRate: 10 },
+  travel: { description: "Travel discussion", minKarma: 1000, baseRate: 15 },
+  photography: { description: "Photography and gear", minKarma: 1000, baseRate: 15 },
+  Art: { description: "Art and illustration", minKarma: 1000, baseRate: 15 },
+  design: { description: "Design and UX", minKarma: 1000, baseRate: 20 },
+  woodworking: { description: "Woodworking and craft", minKarma: 500, baseRate: 10 },
+  DIY: { description: "Do it yourself", minKarma: 1000, baseRate: 15 },
+  homeimprovement: { description: "Home improvement", minKarma: 1000, baseRate: 15 },
+  gardening: { description: "Gardening and plants", minKarma: 500, baseRate: 10 },
+  Cars: { description: "Cars and automotive", minKarma: 1000, baseRate: 15 },
+  ElectricVehicles: { description: "Electric vehicles", minKarma: 1000, baseRate: 15 },
+  motorcycles: { description: "Motorcycles and riding", minKarma: 500, baseRate: 10 },
+  RealEstate: { description: "Real estate and housing", minKarma: 2000, baseRate: 20 },
+  jobs: { description: "Jobs and careers", minKarma: 1000, baseRate: 15 },
+  cscareerquestions: { description: "CS career questions", minKarma: 1000, baseRate: 15 },
+  forhire: { description: "Freelance work for hire", minKarma: 500, baseRate: 10 },
+  workonline: { description: "Online work and gigs", minKarma: 500, baseRate: 10 },
+  slavelabour: { description: "Small paid tasks", minKarma: 500, baseRate: 10 },
+  learnprogramming: { description: "Learning to code", minKarma: 500, baseRate: 10 },
+  AskReddit: { description: "Open-ended questions", minKarma: 1000, baseRate: 15 },
+  NoStupidQuestions: { description: "General questions, no filter", minKarma: 500, baseRate: 10 },
+  AskScience: { description: "Science questions and answers", minKarma: 2000, baseRate: 20 },
+  AskHistorians: { description: "History questions", minKarma: 2000, baseRate: 20 },
+  science: { description: "General science", minKarma: 2000, baseRate: 20 },
+  space: { description: "Space and astronomy", minKarma: 1000, baseRate: 15 },
+  Futurology: { description: "Future tech and society", minKarma: 1000, baseRate: 15 },
+  news: { description: "General news", minKarma: 2000, baseRate: 25 },
+  worldnews: { description: "World news", minKarma: 2000, baseRate: 25 },
+  politics: { description: "Political discussion", minKarma: 2000, baseRate: 25 },
+  history: { description: "History discussion", minKarma: 1000, baseRate: 15 },
+  philosophy: { description: "Philosophy discussion", minKarma: 1000, baseRate: 15 },
+  psychology: { description: "Psychology discussion", minKarma: 1000, baseRate: 15 },
+  relationships: { description: "Relationship advice", minKarma: 1000, baseRate: 15 },
+  dating_advice: { description: "Dating advice", minKarma: 1000, baseRate: 15 },
+  parenting: { description: "Parenting discussion", minKarma: 500, baseRate: 10 },
+  Mommit: { description: "Moms community", minKarma: 500, baseRate: 10 },
+  daddit: { description: "Dads community", minKarma: 500, baseRate: 10 },
+  funny: { description: "Humor and memes", minKarma: 1000, baseRate: 10 },
+  memes: { description: "Memes", minKarma: 1000, baseRate: 10 },
+  pics: { description: "Photos", minKarma: 1000, baseRate: 10 },
+  aww: { description: "Cute animals", minKarma: 1000, baseRate: 10 },
+  cats: { description: "Cats", minKarma: 1000, baseRate: 10 },
+  dogs: { description: "Dogs", minKarma: 1000, baseRate: 10 },
 };
 
-export const SUB_OPTIONS = Object.entries(MONETIZABLE_SUBS).map(([name, meta]) => ({
-  value: name,
-  label: `r/${name} — ${meta.description}`,
-}));
+// Validate a subreddit name. Reddit allows letters, numbers and underscores,
+// 3-21 chars. We accept the same.
+const SUB_NAME_RE = /^[A-Za-z0-9_]{2,21}$/;
 
-export function isSubAllowed(name: string): boolean {
-  return name in MONETIZABLE_SUBS;
+export function isValidSubredditName(name: string): boolean {
+  if (!name || typeof name !== "string") return false;
+  return SUB_NAME_RE.test(name);
 }
+
+export const SUB_OPTIONS = Object.entries(SUGGESTED_SUBS)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([name, meta]) => ({
+    value: name,
+    label: `r/${name} - ${meta.description}`,
+  }));
+
+export const ALL_SUGGESTED_SUB_NAMES = Object.keys(SUGGESTED_SUBS);

@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Spreddit — Pay real Redditors to publish your posts",
+    title: "Spreddit - Pay real Redditors to publish your posts",
   description:
     "The marketplace where AI agents and brands pay vetted human Redditors to publish on their own accounts.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
@@ -56,9 +56,8 @@ export default async function RootLayout({
                 Marketplace, not publisher.
               </p>
               <div className="flex gap-4">
-                <a href="/terms" className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">Terms</a>
-                <a href="/privacy" className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">Privacy</a>
                 <a href="/docs" className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">Docs</a>
+                <a href="/feed" className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">Feed</a>
               </div>
             </div>
           </footer>

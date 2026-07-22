@@ -9,7 +9,10 @@ const { users, accounts, sessions, verificationTokens } = schema;
 
 declare module "next-auth" {
   interface User {
-    role?: "buyer" | "poster" | "admin";
+    role?: "buyer" | "poster" | "admin" | "banned";
+    isBuyer?: boolean;
+    isPoster?: boolean;
+    isAdmin?: boolean;
     balanceCents?: number;
   }
   interface Session {
@@ -18,7 +21,10 @@ declare module "next-auth" {
       email: string;
       name?: string | null;
       image?: string | null;
-      role: "buyer" | "poster" | "admin";
+      role: "buyer" | "poster" | "admin" | "banned";
+      isBuyer: boolean;
+      isPoster: boolean;
+      isAdmin: boolean;
       balanceCents: number;
     };
   }
@@ -68,16 +74,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as any).role ?? "buyer";
+        token.isBuyer = (user as any).isBuyer ?? true;
+        token.isPoster = (user as any).isPoster ?? false;
+        token.isAdmin = (user as any).isAdmin ?? false;
         token.balanceCents = (user as any).balanceCents ?? 0;
       }
-      if (token.id && (trigger === "signIn" || trigger === "update" || !token.role)) {
+      if (
+        token.id &&
+        (trigger === "signIn" || trigger === "update" || !token.role)
+      ) {
         const { eq } = await import("drizzle-orm");
         const u = await db.query.users.findFirst({
           where: eq(users.id, token.id as string),
         });
         if (u) {
           token.role = (u as any).role;
-          token.balanceCents = (u as any).balanceCents;
+          token.isBuyer = (u as any).isBuyer ?? true;
+          token.isPoster = (u as any).isPoster ?? false;
+          token.isAdmin = (u as any).isAdmin ?? false;
+          token.balanceCents = (u as any).balanceCents ?? 0;
         }
       }
       return token;
@@ -86,6 +101,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = (token.role as any) ?? "buyer";
+        session.user.isBuyer = (token.isBuyer as boolean) ?? true;
+        session.user.isPoster = (token.isPoster as boolean) ?? false;
+        session.user.isAdmin = (token.isAdmin as boolean) ?? false;
         session.user.balanceCents = (token.balanceCents as number) ?? 0;
       }
       return session;

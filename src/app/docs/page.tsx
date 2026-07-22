@@ -3,9 +3,14 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TIER_LABEL, TIER_PRICE_CENTS, calculatePosterEarnings } from "@/lib/pricing";
+import {
+  TIER_LABEL,
+  TIER_PRICE_CENTS,
+  calculatePosterEarnings,
+  BOOST_PRICE_CENTS,
+} from "@/lib/pricing";
 import { formatUsd } from "@/lib/money";
-import { IconTerminal } from "@tabler/icons-react";
+import { ALL_SUGGESTED_SUB_NAMES } from "@/lib/subs";
 
 export default function DocsPage() {
   return (
@@ -18,47 +23,65 @@ export default function DocsPage() {
 
       <Section title="1. Get an API key">
         <p>Sign in at <code className="text-xs bg-muted px-1.5 py-0.5 rounded">/login</code>, then go to <code className="text-xs bg-muted px-1.5 py-0.5 rounded">/buyer/api-keys</code> and create a key.</p>
-        <CodeBlock>{`spk_live_5b1f7a9c…`}</CodeBlock>
+        <CodeBlock>{`spk_live_5b1f7a9c...`}</CodeBlock>
         <p>Pass it as a Bearer token. Shown only once at creation.</p>
       </Section>
 
       <Section title="2. REST API">
-        <p>All endpoints accept JSON and require <code className="text-xs bg-muted px-1.5 py-0.5 rounded">Authorization: Bearer spk_live_…</code>.</p>
-        <Endpoint method="GET" path="/api/v1/subs" desc="List monetizable subreddits and their rates." />
-        <Endpoint method="GET" path="/api/v1/account" desc="Account balance and stats." />
-        <Endpoint method="POST" path="/api/v1/posts" desc="Create a post. Pay per post, flat price." />
-        <Endpoint method="GET" path="/api/v1/posts/:id" desc="Get post + claim status. Poll every 30–60s." />
-        <Endpoint method="GET" path="/api/v1/posts" desc="List your posts." />
-        <h3 className="mt-6 font-sans font-bold">Example: create a post</h3>
-        <CodeBlock>{`curl -X POST https://spreddit.fuego.im/api/v1/posts \\
+        <p>All endpoints accept JSON and require <code className="text-xs bg-muted px-1.5 py-0.5 rounded">Authorization: Bearer spk_live_...</code>.</p>
+        <Endpoint method="GET" path="/api/v1/subs" desc={`List ${ALL_SUGGESTED_SUB_NAMES.length} discovered subs. The platform accepts any valid sub name; this list is just for discovery.`} />
+        <Endpoint method="GET" path="/api/v1/account" desc="Wallet balance and stats." />
+        <Endpoint method="POST" path="/api/v1/posts" desc="Create a post. Deducted from your wallet balance. Returns remaining balance." />
+        <Endpoint method="GET" path="/api/v1/posts/:id" desc="Get post + claim status. Poll every 30-60s." />
+        <h3 className="mt-6 font-sans font-bold">Example: top up wallet, then create a post</h3>
+        <CodeBlock>{`# 1. Top up wallet (or use demo mode in dev)
+curl -X POST https://spreddit.fuego.im/api/wallet/topup \\
+  -H "Authorization: Bearer spk_live_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{"amountCents": 5000}'
+
+# 2. Create a post
+curl -X POST https://spreddit.fuego.im/api/v1/posts \\
   -H "Authorization: Bearer spk_live_..." \\
   -H "Content-Type: application/json" \\
   -d '{
     "targetSub": "SaaS",
     "title": "I built a Reddit post marketplace",
-    "body": "Hey r/SaaS — I built Spreddit...",
-    "tier": "high_karma"
+    "body": "Hey r/SaaS - I built Spreddit...",
+    "tier": "high_karma",
+    "subMatchPriority": true
   }'`}</CodeBlock>
         <h3 className="mt-6 font-sans font-bold">Response</h3>
         <CodeBlock>{`{
-  "id": "ps_8e7f…",
+  "id": "ps_8e7f...",
   "status": "available",
-  "bountyCents": 699
+  "bountyCents": 699,
+  "boostCents": 200,
+  "totalChargedCents": 899,
+  "platformFeeCents": 140,
+  "posterPayoutCents": 559,
+  "remainingBalanceCents": 4101
 }`}</CodeBlock>
+        <p className="mt-2 text-sm">If the wallet has insufficient funds, the API returns <code className="text-xs">402 Payment Required</code> with the shortfall.</p>
       </Section>
 
       <Section title="3. MCP server (one-line install)">
-        <p>For AI agents. Available runtimes:</p>
+        <p>For AI agents. Works with any MCP-supporting runtime.</p>
         <CodeBlock>{`npx spreddit-mcp add --agent claude-code
 npx spreddit-mcp add --agent opencode
 npx spreddit-mcp add --agent hermes
 npx spreddit-mcp add --agent openclaw
-npx spreddit-mcp add --agent codex`}</CodeBlock>
+npx spreddit-mcp add --agent codex
+npx spreddit-mcp add --agent cursor
+npx spreddit-mcp add --agent windsurf
+
+# Or any agent: just point at its MCP config file
+npx spreddit-mcp add --agent my-agent --config ~/.my-agent/mcp.json`}</CodeBlock>
         <h3 className="mt-6 font-sans font-bold">Tools exposed</h3>
-        <Tool name="spreddit_create_post" desc="Create a post. Flat price per tier." args='{ subreddit, title, body, tier }' />
+        <Tool name="spreddit_create_post" desc="Create a post. Deducts from your wallet balance." args='{ subreddit, title, body, tier, survivalGuarantee?, subMatchPriority?, sameDayPublish? }' />
         <Tool name="spreddit_check_status" desc="Get the current status of a post." args='{ post_id }' />
-        <Tool name="spreddit_list_subs" desc="List monetizable subreddits." args="" />
-        <Tool name="spreddit_account_balance" desc="Check remaining credit." args="" />
+        <Tool name="spreddit_list_subs" desc="List discovered subs. The platform accepts any valid sub name." args="" />
+        <Tool name="spreddit_account_balance" desc="Check wallet balance and stats." args="" />
         <h3 className="mt-6 font-sans font-bold">Example: campaign loop</h3>
         <CodeBlock>{`const post = await spreddit_create_post({
   subreddit: "SaaS",
@@ -91,17 +114,37 @@ while (true) {
             </div>
           ))}
         </div>
+        <h3 className="mt-6 font-sans font-bold">Boosts (stack on any tier)</h3>
+        <ul className="mt-2 space-y-1 text-sm">
+          <li><Badge variant="outline">survival_guarantee</Badge> +{formatUsd(BOOST_PRICE_CENTS.survival_guarantee)} - full refund if mod-removed within 24h</li>
+          <li><Badge variant="outline">sub_match_priority</Badge> +{formatUsd(BOOST_PRICE_CENTS.sub_match_priority)} - surfaces first to opted-in posters</li>
+          <li><Badge variant="outline">same_day_publish</Badge> +{formatUsd(BOOST_PRICE_CENTS.same_day_publish)} - bounty doubles if unclaimed after 1h</li>
+        </ul>
       </Section>
 
-      <Section title="5. Status lifecycle">
+      <Section title="5. Subreddit targeting">
+        <p>Any valid subreddit name is accepted. Names must be 2-21 characters of letters, numbers, and underscores. The platform does not maintain a whitelist.</p>
+        <p className="mt-2">We expose a discovery list of {ALL_SUGGESTED_SUB_NAMES.length} popular subs via <code className="text-xs bg-muted px-1.5 py-0.5 rounded">/api/v1/subs</code>, but you can target any sub that exists on Reddit.</p>
+      </Section>
+
+      <Section title="6. Status lifecycle">
         <ul className="mt-2 space-y-1 text-sm">
-          <li><Badge variant="outline">available</Badge> — in the feed, posters can claim</li>
-          <li><Badge>claimed</Badge> — a poster has 60 min to publish and submit proof</li>
-          <li><Badge>proof_submitted</Badge> — auto-verifier is fetching the URL</li>
-          <li><Badge>verified</Badge> — URL is live and matches; 24h survival timer starts</li>
-          <li><Badge variant="default">paid</Badge> — survived 24h, payout queued</li>
-          <li><Badge variant="destructive">removed</Badge> — mod-removed, refunded</li>
-          <li><Badge variant="destructive">failed</Badge> — proof didn&apos;t match, claim rejected</li>
+          <li><Badge variant="outline">available</Badge> - in the feed, posters can claim</li>
+          <li><Badge>claimed</Badge> - a poster has 60 min to publish and submit proof</li>
+          <li><Badge>proof_submitted</Badge> - auto-verifier is fetching the URL</li>
+          <li><Badge>verified</Badge> - URL is live and matches; 24h survival timer starts</li>
+          <li><Badge variant="default">paid</Badge> - survived 24h, payout queued for next weekly batch</li>
+          <li><Badge variant="destructive">removed</Badge> - mod-removed, refunded to buyer (if survival guarantee)</li>
+          <li><Badge variant="destructive">failed</Badge> - proof did not match, claim rejected</li>
+        </ul>
+      </Section>
+
+      <Section title="7. Payment">
+        <p>Spreddit uses a pre-funded wallet. Buyers top up via Stripe, then each post deducts from the balance. In demo mode (no Stripe configured), top-ups are added instantly without a real charge.</p>
+        <ul className="mt-2 space-y-1 text-sm">
+          <li>Platform fee: 20% of the base bounty. Posters earn 80%.</li>
+          <li>Payouts: weekly batch via Stripe Connect (or queued for manual review in demo mode).</li>
+          <li>Refund policy: full refund minus platform fee if the post is mod-removed within 24h and the survival_guarantee boost is on.</li>
         </ul>
       </Section>
     </div>

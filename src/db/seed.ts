@@ -29,7 +29,9 @@ async function seed() {
       emailVerified: new Date(),
       name: "Demo Buyer",
       role: "buyer",
-      balanceCents: 0,
+      isBuyer: true,
+      isPoster: false,
+      balanceCents: dollarsToCents(500),
     },
     {
       id: posterId,
@@ -37,6 +39,8 @@ async function seed() {
       emailVerified: new Date(),
       name: "Demo Poster",
       role: "poster",
+      isBuyer: true,
+      isPoster: true,
       balanceCents: 0,
     },
   ]);
@@ -58,7 +62,7 @@ async function seed() {
   const samplePosts = [
     {
       title: "I built a Reddit post marketplace so AI agents can launch on the front page of the internet",
-      body: `Hey r/SaaS — I spent the last 6 months building Spreddit after hitting Reddit's API wall trying to launch my own tool.
+      body: `Hey r/SaaS - I spent the last 6 months building Spreddit after hitting Reddit's API wall trying to launch my own tool.
 
 The premise: AI agents can write the perfect Reddit post but can't post it without getting flagged, shadowbanned, or rate-limited. So I built a marketplace where AI agents and brands pay vetted human Redditors to publish on their own accounts.
 
@@ -68,17 +72,16 @@ What it does:
 - Auto-verify the URL + 24h survival check
 - Refund if the post gets mod-removed
 
-The interesting part is the MCP integration — your Claude Code or OpenCode agent can run a full campaign loop unattended. One line to install.
+The interesting part is the MCP integration. Your Claude Code or OpenCode agent can run a full campaign loop unattended. One line to install.
 
 We're in private beta. Looking for the first 50 posters and a handful of agent devs to try it.
 
 Happy to answer questions or take feedback.`,
       targetSub: "SaaS",
       tier: "high_karma" as const,
-      baseBounty: 30,
     },
     {
-      title: "Open-sourcing my side project after 3 years — here's everything I learned",
+      title: "Open-sourcing my side project after 3 years - here's everything I learned",
       body: `After 3 years of nights and weekends, I'm finally open-sourcing my note-taking app.
 
 Lessons learned:
@@ -94,7 +97,6 @@ Live: [link]
 AMA in the comments.`,
       targetSub: "sideproject",
       tier: "random" as const,
-      baseBounty: 20,
     },
     {
       title: "Spent $200 testing AI agents on Reddit. Here's what I learned about post quality.",
@@ -106,9 +108,9 @@ What worked:
 - Posts with a clear "AMA in the comments" at the end got 2x more comments
 
 What didn't:
-- "Revolutionary", "game-changing", "10x" — instant downvotes
-- Posts that linked in the first paragraph — flagged
-- Posting more than 2x per week from the same account — mod-flagged
+- "Revolutionary", "game-changing", "10x" - instant downvotes
+- Posts that linked in the first paragraph - flagged
+- Posting more than 2x per week from the same account - mod-flagged
 
 The biggest lesson: AI agents can write the post, but they can't post it without getting flagged. You need a human account with karma.
 
@@ -119,7 +121,6 @@ That's why I built Spreddit. It's a marketplace where AI agents submit posts and
 Curious what other agent devs are doing for distribution.`,
       targetSub: "AI_Agents",
       tier: "high_karma" as const,
-      baseBounty: 30,
     },
   ];
 
@@ -134,13 +135,18 @@ Curious what other agent devs are doing for distribution.`,
       tier: p.tier,
       bountyCents,
       status: "available",
+      paidAt: new Date(),
+      paymentIntentId: "demo_seed",
     });
   }
 
   console.log("Seeded:");
-  console.log("  buyer@spreddit.dev");
+  console.log("  buyer@spreddit.dev  (balance: $500 demo funds)");
   console.log("  poster@spreddit.dev (with verified u/demo_poster)");
   console.log(`  ${samplePosts.length} sample posts in the feed`);
+  console.log("");
+  console.log("Run with DEMO_MODE=true (default) to test without configuring Stripe.");
+  console.log("Sign in at /login with either email, then paste the magic link from the server console.");
 }
 
 seed()

@@ -13,9 +13,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { IconArrowLeft, IconExternalLink, IconShieldCheck, IconShieldX } from "@tabler/icons-react";
+import { IconArrowLeft, IconExternalLink } from "@tabler/icons-react";
 import Link from "next/link";
-import { PayWithStripe } from "./pay-with-stripe";
 import { AppealButton } from "./appeal-button";
 
 const CLAIM_STATUS: Record<string, { variant: "default" | "secondary" | "outline" | "destructive"; label: string }> = {
@@ -55,9 +54,9 @@ export default async function BuyerPostDetail({
           <h1 className="font-sans text-3xl font-extrabold tracking-tight">{post.title}</h1>
           <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
             <span>{TIER_LABEL[post.tier]}</span>
-            <span>·</span>
+            <span>-</span>
             <span>{formatUsd(post.bountyCents, { withCents: true })}</span>
-            <span>·</span>
+            <span>-</span>
             <span>{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>
@@ -88,25 +87,12 @@ export default async function BuyerPostDetail({
         </CardContent>
       </Card>
 
-      {post.status === "pending_payment" && (
-        <Card className="mb-6 border-primary/30">
-          <CardHeader>
-            <CardTitle className="font-sans">Complete payment</CardTitle>
-            <CardDescription>
-              Pay to publish this post. Once paid, it appears in the poster feed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PayWithStripe postId={post.id} amountCents={post.bountyCents} />
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader>
           <CardTitle className="font-sans">Claims</CardTitle>
           <CardDescription>
-            Posters who claimed this. Verified means the post URL was live and matched the body.
+            Posters who claimed this. Verified means the post URL was live and
+            matched the body.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -125,9 +111,9 @@ export default async function BuyerPostDetail({
                         u/
                       </div>
                       <div>
-                        <div className="text-sm font-medium">{c.redditAccount?.username ?? "—"}</div>
+                        <div className="text-sm font-medium">{c.redditAccount?.username ?? "-"}</div>
                         <div className="text-xs text-muted-foreground">
-                          {c.redditAccount?.karma?.toLocaleString()} karma · claimed {new Date(c.claim.claimedAt).toLocaleString()}
+                          {c.redditAccount?.karma?.toLocaleString()} karma - claimed {new Date(c.claim.claimedAt).toLocaleString()}
                         </div>
                       </div>
                     </div>

@@ -25,9 +25,13 @@ export const users = pgTable(
     role: text("role", { enum: ["buyer", "poster", "admin", "banned"] })
       .notNull()
       .default("buyer"),
+    isBuyer: boolean("is_buyer").notNull().default(true),
+    isPoster: boolean("is_poster").notNull().default(false),
+    isAdmin: boolean("is_admin").notNull().default(false),
     stripeCustomerId: text("stripe_customer_id"),
     stripeAccountId: text("stripe_account_id"),
     balanceCents: integer("balance_cents").notNull().default(0),
+    pendingPayoutCents: integer("pending_payout_cents").notNull().default(0),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [index("users_email_idx").on(t.email)]
@@ -131,6 +135,8 @@ export const posts = pgTable(
     })
       .notNull()
       .default("pending_payment"),
+    paymentIntentId: text("payment_intent_id"),
+    paidAt: ts("paid_at"),
     createdAt: ts("created_at").notNull().defaultNow(),
     expiresAt: ts("expires_at"),
   },
@@ -242,6 +248,47 @@ export const apiKeys = pgTable(
   (t) => [index("api_keys_user_idx").on(t.userId)]
 );
 
+export const topups = pgTable(
+  "topups",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    amountCents: integer("amount_cents").notNull(),
+    method: text("method", { enum: ["stripe", "demo", "admin"] })
+      .notNull()
+      .default("stripe"),
+    status: text("status", { enum: ["pending", "succeeded", "failed"] })
+      .notNull()
+      .default("pending"),
+    stripeSessionId: text("stripe_session_id"),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    paidAt: ts("paid_at"),
+  },
+  (t) => [
+    index("topups_user_idx").on(t.userId),
+    index("topups_status_idx").on(t.status),
+  ]
+);
+
+export const proofUploads = pgTable(
+  "proof_uploads",
+  {
+    id: text("id").primaryKey(),
+    claimId: text("claim_id")
+      .notNull()
+      .references(() => claims.id, { onDelete: "cascade" }),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    data: text("data").notNull(),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("proof_uploads_claim_idx").on(t.claimId)]
+);
+
 export const passkeys = pgTable(
   "passkeys",
   {
@@ -307,3 +354,7 @@ export type Dispute = typeof disputes.$inferSelect;
 export type NewDispute = typeof disputes.$inferInsert;
 export type Passkey = typeof passkeys.$inferSelect;
 export type NewPasskey = typeof passkeys.$inferInsert;
+export type Topup = typeof topups.$inferSelect;
+export type NewTopup = typeof topups.$inferInsert;
+export type ProofUpload = typeof proofUploads.$inferSelect;
+export type NewProofUpload = typeof proofUploads.$inferInsert;

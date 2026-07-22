@@ -117,7 +117,7 @@ export default async function PosterClaimDetail({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={submitProofAction} className="space-y-4">
+            <form action={submitProofAction} encType="multipart/form-data" className="space-y-4">
               <input type="hidden" name="claimId" value={claim.id} />
               <div>
                 <Label htmlFor="redditPostUrl">Reddit post URL</Label>
@@ -131,7 +131,7 @@ export default async function PosterClaimDetail({
                 />
               </div>
               <div>
-                <Label htmlFor="proofUrl">Screenshot URL (optional)</Label>
+                <Label htmlFor="proofUrl">External screenshot URL (optional)</Label>
                 <Input
                   id="proofUrl"
                   name="proofUrl"
@@ -139,7 +139,23 @@ export default async function PosterClaimDetail({
                   placeholder="https://imgur.com/..."
                   className="mt-2"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">Optional. Helps with disputes.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Optional. Helps with disputes.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="screenshot">Upload screenshot (optional)</Label>
+                <Input
+                  id="screenshot"
+                  name="screenshot"
+                  type="file"
+                  accept="image/*"
+                  className="mt-2"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  PNG, JPG, or GIF. Up to 5MB. We store it securely for dispute
+                  review.
+                </p>
               </div>
               <Button type="submit">Submit proof</Button>
             </form>

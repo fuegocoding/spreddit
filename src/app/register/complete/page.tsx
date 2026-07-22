@@ -35,11 +35,12 @@ export default async function RegisterCompletePage() {
             <IconCheck className="size-7" />
           </span>
           <CardTitle className="mt-4 text-2xl font-sans font-bold">
-            You&apos;re all set
+            You are all set
           </CardTitle>
           <CardDescription>
-            Your account is ready. You signed up as a{" "}
-            <span className="font-semibold text-foreground">{role}</span>.
+            You signed up as a{" "}
+            <span className="font-semibold text-foreground">{role}</span>. You
+            can add the other role any time from your account menu.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

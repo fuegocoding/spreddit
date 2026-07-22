@@ -10,7 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IconLogout, IconUser, IconLayoutGrid, IconSettings } from "@tabler/icons-react";
+import {
+  IconLogout,
+  IconLayoutGrid,
+  IconSettings,
+  IconCoin,
+  IconPlus,
+} from "@tabler/icons-react";
 import { formatUsd } from "@/lib/money";
 
 export async function SiteHeader({ user }: { user: any }) {
@@ -49,12 +55,12 @@ export async function SiteHeader({ user }: { user: any }) {
                       {user.email?.[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:inline">
-                    {user.role === "poster" ? "Poster" : "Buyer"}
+                  <span className="hidden sm:inline text-sm font-mono">
+                    {formatUsd(user.balanceCents ?? 0, { withCents: false })}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="font-mono text-xs text-muted-foreground">Signed in as</div>
                   <div className="truncate font-sans text-sm">{user.email}</div>
@@ -63,22 +69,42 @@ export async function SiteHeader({ user }: { user: any }) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href={user.role === "poster" ? "/poster" : "/buyer"} className="flex items-center gap-2 cursor-pointer">
-                    <IconLayoutGrid className="size-4" />
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
+                {user.isBuyer && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/buyer" className="flex items-center gap-2 cursor-pointer">
+                      <IconCoin className="size-4" />
+                      Buyer dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {user.isPoster && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/poster" className="flex items-center gap-2 cursor-pointer">
+                      <IconLayoutGrid className="size-4" />
+                      Poster dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {!user.isBuyer && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/register" className="flex items-center gap-2 cursor-pointer">
+                      <IconPlus className="size-4" />
+                      Become a buyer
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {!user.isPoster && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/poster/connect" className="flex items-center gap-2 cursor-pointer">
+                      <IconPlus className="size-4" />
+                      Become a poster
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href="/feed" className="flex items-center gap-2 cursor-pointer">
                     <IconLayoutGrid className="size-4" />
                     Browse feed
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
-                    <IconSettings className="size-4" />
-                    Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

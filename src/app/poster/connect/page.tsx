@@ -70,8 +70,8 @@ export default async function ConnectRedditPage(props: {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-start gap-2"><span className="text-primary font-bold">1.</span> Enter your Reddit username below</div>
-          <div className="flex items-start gap-2"><span className="text-primary font-bold">2.</span> We give you a unique code — post it anywhere on Reddit (you can delete it after)</div>
-          <div className="flex items-start gap-2"><span className="text-primary font-bold">3.</span> Paste the post URL — we confirm you own the account</div>
+          <div className="flex items-start gap-2"><span className="text-primary font-bold">2.</span> We give you a unique code, post it anywhere on Reddit (you can delete it after)</div>
+          <div className="flex items-start gap-2"><span className="text-primary font-bold">3.</span> Paste the post URL, we confirm you own the account</div>
           <div className="flex items-start gap-2"><span className="text-primary font-bold">4.</span> We also check your profile for karma and account age</div>
         </CardContent>
       </Card>

@@ -118,14 +118,17 @@ export async function runSurvivalCheck(claimId: string): Promise<VerificationRes
   await db
     .update(s.claims)
     .set({ status: "survived", survivalCheckedAt: new Date() })
-    .where(eq(s.claims.id, claim.id));
+    .where(eq(s.claims.id, claimId));
   await db
     .update(s.posts)
     .set({ status: "paid" })
     .where(eq(s.posts.id, claim.postId));
+  // Move payout to the poster's pending balance. A separate weekly batch
+  // cron reads from this balance and either pays out via Stripe Connect or
+  // leaves it queued for manual review.
   await db
     .update(s.users)
-    .set({ balanceCents: sql`balance_cents + ${claim.payoutCents}` })
+    .set({ pendingPayoutCents: sql`pending_payout_cents + ${claim.payoutCents}` })
     .where(eq(s.users.id, claim.posterId));
 
   return result;
@@ -214,4 +217,91 @@ function decodeHTML(s: string): string {
 
 function stripHtml(s: string): string {
   return decodeHTML(s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " "));
+}
+
+import { stripe as stripeClient } from "./stripe";
+import { newId } from "./ids";
+
+/**
+ * Weekly batch payout. Reads users with a non-zero pendingPayoutCents and
+ * either initiates a Stripe Connect transfer (if configured) or queues a
+ * payout record for manual review. Run from the cron at /api/cron/payouts.
+ */
+export async function runWeeklyPayoutBatch(): Promise<{
+  users: number;
+  transfers: number;
+  queued: number;
+}> {
+  const due = (await db
+    .select({
+      id: s.users.id,
+      email: s.users.email,
+      stripeAccountId: s.users.stripeAccountId,
+      pendingPayoutCents: s.users.pendingPayoutCents,
+    })
+    .from(s.users)
+    .where(sql`${s.users.pendingPayoutCents} > 0`)) as Array<{
+    id: string;
+    email: string;
+    stripeAccountId: string | null;
+    pendingPayoutCents: number;
+  }>;
+
+  let transfers = 0;
+  let queued = 0;
+  const MIN_TRANSFER_CENTS = 500;
+
+  for (const u of due) {
+    if (!u.pendingPayoutCents || u.pendingPayoutCents <= 0) continue;
+
+    // Try Stripe transfer first
+    let transferred = false;
+    if (stripeClient && u.stripeAccountId && u.pendingPayoutCents >= MIN_TRANSFER_CENTS) {
+      try {
+        const transfer = await stripeClient.transfers.create({
+          amount: u.pendingPayoutCents,
+          currency: "usd",
+          destination: u.stripeAccountId,
+        });
+        const payoutId = newId();
+        await db.insert(s.payouts).values({
+          id: payoutId,
+          userId: u.id,
+          amountCents: u.pendingPayoutCents,
+          method: "stripe",
+          status: "paid",
+          stripeTransferId: transfer.id,
+          paidAt: new Date(),
+        });
+        await db
+          .update(s.users)
+          .set({ pendingPayoutCents: 0 })
+          .where(eq(s.users.id, u.id));
+        transfers++;
+        transferred = true;
+      } catch (e) {
+        console.error(`payout transfer failed for ${u.email}:`, e);
+      }
+    }
+
+    if (!transferred) {
+      // Queue for manual review. Keeps the pending balance so the
+      // operator can see the outstanding amount.
+      const payoutId = newId();
+      await db.insert(s.payouts).values({
+        id: payoutId,
+        userId: u.id,
+        amountCents: u.pendingPayoutCents,
+        method: u.stripeAccountId ? "stripe" : "stripe",
+        status: "queued",
+      });
+      await db
+        .update(s.users)
+        .set({ pendingPayoutCents: 0 })
+        .where(eq(s.users.id, u.id));
+      queued++;
+    }
+  }
+
+  return { users: due.length, transfers, queued };
 }

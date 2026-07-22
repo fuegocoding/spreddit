@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, schema } from "@/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
 import type Stripe from "stripe";
 
@@ -27,7 +27,6 @@ export async function POST(request: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      const postId = session.metadata?.postId;
       const type = session.metadata?.type;
 
       if (type === "appeal") {
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
         const buyerId = session.metadata?.buyerId;
 
         if (claimId && posterId && buyerId) {
-          // Create dispute record
           await db.insert(schema.disputes).values({
             id: require("node:crypto").randomUUID(),
             claimId,
@@ -46,25 +44,50 @@ export async function POST(request: Request) {
             resolution: "Buyer paid $0.99 to lift ban",
             resolvedAt: new Date(),
           });
-          // Unban the poster
           await db
             .update(schema.users)
             .set({ role: "poster" })
             .where(eq(schema.users.id, posterId));
         }
-      } else if (postId) {
-        // Normal post payment
+      } else if (type === "topup") {
+        const topupId = session.metadata?.topupId;
+        const userId = session.metadata?.userId;
+        const amountCents = Number(session.metadata?.amountCents ?? "0");
+        if (topupId && userId && amountCents > 0) {
+          const [topup] = await db
+            .select()
+            .from(schema.topups)
+            .where(eq(schema.topups.id, topupId))
+            .limit(1);
+          if (topup && topup.status === "pending") {
+            await db
+              .update(schema.topups)
+              .set({
+                status: "succeeded",
+                stripePaymentIntentId:
+                  typeof session.payment_intent === "string"
+                    ? session.payment_intent
+                    : session.payment_intent?.id ?? null,
+                paidAt: new Date(),
+              })
+              .where(eq(schema.topups.id, topupId));
+            await db
+              .update(schema.users)
+              .set({ balanceCents: sql`balance_cents + ${amountCents}` })
+              .where(eq(schema.users.id, userId));
+          }
+        }
+      } else if (session.metadata?.postId) {
+        const postId = session.metadata.postId;
         await db
           .update(schema.posts)
-          .set({ status: "available" })
+          .set({ status: "available", paidAt: new Date() })
           .where(eq(schema.posts.id, postId));
       }
       break;
     }
     case "account.updated": {
-      const account = event.data.object as Stripe.Account;
-      // For now we just track that the account is connected; full KYC review
-      // could be added later.
+      // Future: track onboarding state, payouts enabled, etc.
       break;
     }
   }

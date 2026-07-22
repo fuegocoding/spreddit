@@ -18,7 +18,9 @@ export default async function RegisterPage() {
   const session = await auth();
 
   if (session?.user) {
-    redirect(session.user.role === "poster" ? "/poster" : "/buyer");
+    if (session.user.isPoster) redirect("/poster");
+    if (session.user.isBuyer) redirect("/buyer");
+    redirect("/buyer");
   }
 
   return (
@@ -32,7 +34,8 @@ export default async function RegisterPage() {
             Create your account
           </CardTitle>
           <CardDescription>
-            Choose your role and enter your email to get started.
+            Sign up with your email. You can be both a buyer and a poster; pick
+            whichever role to start with and you can add the other later.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -56,7 +59,7 @@ export default async function RegisterPage() {
             className="space-y-6"
           >
             <fieldset className="space-y-3">
-              <Label>I want to...</Label>
+              <Label>I want to start as a...</Label>
               <div className="grid grid-cols-2 gap-3">
                 <Label
                   htmlFor="role-buyer"
@@ -72,9 +75,9 @@ export default async function RegisterPage() {
                   />
                   <IconUser className="size-6 text-primary" />
                   <div>
-                    <div className="font-sans font-bold text-sm">Buy</div>
+                    <div className="font-sans font-bold text-sm">Buyer</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      I want to pay Redditors to post
+                      Pay Redditors to post
                     </div>
                   </div>
                 </Label>
@@ -91,9 +94,9 @@ export default async function RegisterPage() {
                   />
                   <IconUsers className="size-6 text-primary" />
                   <div>
-                    <div className="font-sans font-bold text-sm">Post</div>
+                    <div className="font-sans font-bold text-sm">Poster</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      I want to earn money posting
+                      Earn posting on Reddit
                     </div>
                   </div>
                 </Label>

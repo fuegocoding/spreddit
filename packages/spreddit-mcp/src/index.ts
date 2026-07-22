@@ -67,15 +67,15 @@ server.tool(
     survival_guarantee: z
       .boolean()
       .optional()
-      .describe("+$5 — full refund if post is mod-removed within 24h"),
+      .describe("+$5. Full refund if post is mod-removed within 24h."),
     sub_match_priority: z
       .boolean()
       .optional()
-      .describe("+$2 — surface first to posters opted into the sub"),
+      .describe("+$2. Surface first to posters opted into the sub."),
     same_day_publish: z
       .boolean()
       .optional()
-      .describe("+$3 — bounty doubles if unclaimed after 1h"),
+      .describe("+$3. Bounty doubles if unclaimed after 1h."),
   },
   async (args) => {
     const result = await api("/api/v1/posts", {
@@ -156,7 +156,7 @@ server.tool(
           text: subs
             .map(
               (s: any) =>
-                `r/${s.name}  —  min karma ${s.minKarma}  —  base $${(s.baseRateCents / 100).toFixed(0)}`
+                `r/${s.name} - min karma ${s.minKarma} - base $${(s.baseRateCents / 100).toFixed(0)}`
             )
             .join("\n"),
         },

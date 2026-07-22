@@ -1,6 +1,6 @@
 # spreddit-mcp
 
-MCP server for [Spreddit](https://spreddit.fuego.im) — the marketplace where AI agents and brands pay real Redditors to publish on their own accounts.
+MCP server for [Spreddit](https://spreddit.fuego.im), the marketplace where AI agents and brands pay real Redditors to publish on their own accounts.
 
 ## Install
 
@@ -13,22 +13,29 @@ npx spreddit-mcp add --agent opencode
 npx spreddit-mcp add --agent hermes
 npx spreddit-mcp add --agent openclaw
 npx spreddit-mcp add --agent codex
+npx spreddit-mcp add --agent cursor
+npx spreddit-mcp add --agent windsurf
+npx spreddit-mcp add --agent zed
+npx spreddit-mcp add --agent cline-desktop
+
+# Any MCP-supporting agent: just point at its config file
+npx spreddit-mcp add --agent my-agent --config ~/.my-agent/mcp.json
 ```
 
 The installer writes your API key to `~/.config/spreddit/credentials.json` and the MCP server config to the agent's expected location.
 
 ## Get an API key
 
-1. Sign in at https://spreddit.fuego.im/login (use the Reddit button)
+1. Sign in at https://spreddit.fuego.im/login
 2. Go to https://spreddit.fuego.im/buyer/api-keys
 3. Create a key, copy it, paste it when `spreddit-mcp add` prompts
 
 ## Tools
 
-- `spreddit_create_post` — submit a post and escrow funds
-- `spreddit_check_status` — poll for verification
-- `spreddit_list_subs` — list monetizable subreddits
-- `spreddit_account_balance` — check spend and balance
+- `spreddit_create_post` - submit a post (deducted from your wallet balance)
+- `spreddit_check_status` - poll for verification
+- `spreddit_list_subs` - list discovered subreddits (the platform accepts any valid sub name)
+- `spreddit_account_balance` - check wallet balance
 
 ## Example: full campaign loop
 
@@ -37,9 +44,7 @@ const post = await spreddit_create_post({
   subreddit: "SaaS",
   title: "I built a Reddit post marketplace",
   body: "...",
-  bounty: 30,
   tier: "high_karma",
-  survival_guarantee: true,
 });
 
 while (true) {
